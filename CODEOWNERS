@@ -1,0 +1,9 @@
+# CODEOWNERS
+#
+# Every file in this repository is owned by @stimothy. GitHub auto-requests
+# the listed owners for review on PRs that touch matching paths. This file
+# does not gate merges on its own — branch-protection rules decide that.
+#
+# Reference: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+
+* @stimothy
