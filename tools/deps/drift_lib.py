@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 from packaging.requirements import InvalidRequirement, Requirement
+from packaging.version import InvalidVersion, Version
 
 
 @dataclass
@@ -131,6 +133,70 @@ def parse_workflow(path: Path, root: Path) -> list[Sighting]:
                 )
 
     return sightings
+
+
+def _strip_to_version(raw: str) -> Version | None:
+    """Return a :class:`Version` from a raw spec string, or ``None``.
+
+    Handles leading specifier operators (``>=``, ``==``, ``~=``, etc.) and a
+    leading ``v`` (as used by GitHub release tags).
+    """
+    stripped = raw.lstrip("<>=!~").strip()
+    if stripped.startswith("v"):
+        stripped = stripped[1:]
+    if not stripped:
+        return None
+    try:
+        return Version(stripped)
+    except InvalidVersion:
+        return None
+
+
+def analyze_sightings(sightings: list[Sighting]) -> list[Finding]:
+    """Group sightings by package and emit one Finding per cross-referenced package."""
+    groups: dict[str, list[Sighting]] = defaultdict(list)
+    for s in sightings:
+        groups[s.package].append(s)
+
+    findings: list[Finding] = []
+    for package, group in sorted(groups.items()):
+        if len(group) < 2:
+            continue
+        versions = {s.version for s in group}
+        if len(versions) == 1:
+            findings.append(
+                Finding(
+                    package=package,
+                    status="in_sync",
+                    sightings=list(group),
+                    recommendation="in sync (informational)",
+                )
+            )
+            continue
+
+        # Drift — find highest parseable version among sightings.
+        parsed = [(s, _strip_to_version(s.version)) for s in group]
+        parseable = [(s, v) for s, v in parsed if v is not None]
+        if not parseable:
+            # All unparseable — report as drift with raw strings.
+            recommendation = f"bump to one of: {sorted(versions)} (no parseable versions)"
+            findings.append(
+                Finding(package=package, status="drift", sightings=list(group), recommendation=recommendation)
+            )
+            continue
+
+        highest_sighting, highest_version = max(parseable, key=lambda pair: pair[1])
+        lagging = [s for s, v in parsed if v != highest_version]
+        if len(lagging) == 1:
+            s = lagging[0]
+            recommendation = f"bump {s.file} ({s.location}) to {highest_sighting.version}"
+        else:
+            laggers = ", ".join(f"{s.file}:{s.location}" for s in lagging)
+            recommendation = f"bump to {highest_sighting.version} (lagging: {laggers})"
+
+        findings.append(Finding(package=package, status="drift", sightings=list(group), recommendation=recommendation))
+
+    return findings
 
 
 def parse_requirements(path: Path, root: Path) -> list[Sighting]:

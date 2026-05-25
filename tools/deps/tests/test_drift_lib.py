@@ -5,7 +5,15 @@ from __future__ import annotations
 from textwrap import dedent
 
 import pytest
-from drift_lib import Finding, Sighting, normalize_name, parse_precommit_config, parse_requirements, parse_workflow
+from drift_lib import (
+    Finding,
+    Sighting,
+    analyze_sightings,
+    normalize_name,
+    parse_precommit_config,
+    parse_requirements,
+    parse_workflow,
+)
 
 
 class TestDataClasses:
@@ -216,3 +224,47 @@ class TestParseWorkflow:
         sightings = parse_workflow(wf, root=tmp_path)
         # The sha256 digest must not be captured as a version.
         assert sightings == []
+
+
+class TestAnalyzeSightings:
+    def test_single_sighting_packages_are_dropped(self):
+        sightings = [
+            Sighting(package="lonely", file="a.txt", location="line 1", version="1.0"),
+        ]
+        assert analyze_sightings(sightings) == []
+
+    def test_matching_versions_emit_in_sync(self):
+        sightings = [
+            Sighting(package="pyyaml", file="a.txt", location="line 1", version=">=6.0.3"),
+            Sighting(package="pyyaml", file="b.yaml", location="hook=foo", version=">=6.0.3"),
+        ]
+        findings = analyze_sightings(sightings)
+        assert len(findings) == 1
+        assert findings[0].package == "pyyaml"
+        assert findings[0].status == "in_sync"
+        assert findings[0].recommendation == "in sync (informational)"
+
+    def test_drift_recommends_bumping_lagging_to_highest(self):
+        sightings = [
+            Sighting(package="pyyaml", file="requirements-dev.txt", location="line 3", version=">=6.0.3"),
+            Sighting(package="pyyaml", file=".pre-commit-config.yaml", location="hook=adr-validate", version=">=6.0"),
+        ]
+        findings = analyze_sightings(sightings)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f.status == "drift"
+        assert f.recommendation == "bump .pre-commit-config.yaml (hook=adr-validate) to >=6.0.3"
+
+    def test_drift_with_multiple_lagging_lists_them(self):
+        sightings = [
+            Sighting(package="actions/checkout", file=".github/workflows/a.yml", location="uses", version="v6"),
+            Sighting(package="actions/checkout", file=".github/workflows/b.yml", location="uses", version="v5"),
+            Sighting(package="actions/checkout", file=".github/workflows/c.yml", location="uses", version="v5"),
+        ]
+        findings = analyze_sightings(sightings)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f.status == "drift"
+        assert ".github/workflows/b.yml" in f.recommendation
+        assert ".github/workflows/c.yml" in f.recommendation
+        assert "v6" in f.recommendation
