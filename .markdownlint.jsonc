@@ -1,0 +1,10 @@
+{
+  // Reasonable defaults; relax a few rules that fight ADR table layout.
+  "default": true,
+  "MD013": false,        // line-length: ADRs use prose paragraphs
+  "MD024": { "siblings_only": true }, // duplicate headings OK across sections
+  "MD029": false,        // ol-prefix: some list formatting requires flexibility
+  "MD031": false,        // blanks-around-fences: code blocks in lists need flexibility
+  "MD033": false,        // allow inline HTML (template uses <!-- ... -->)
+  "MD041": false         // first line can be frontmatter, not H1
+}
