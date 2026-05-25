@@ -8,7 +8,7 @@ from adr_lib import enumerate_adrs, parse_frontmatter, parse_tags_file, parse_he
 
 
 _FILENAME_RE = re.compile(r"^(?P<id>\d{6})-(?P<slug>[a-z0-9-]+)\.md$")
-_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\r?\n.*?\r?\n---\r?\n", re.DOTALL)
 _ALLOWED_STATUSES = {"Proposed", "Accepted", "Deprecated", "Superseded"}
 _REQUIRED_FIELDS = [
     "id", "name", "description", "status",

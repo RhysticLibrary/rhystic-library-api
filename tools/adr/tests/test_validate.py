@@ -171,3 +171,10 @@ class TestBodyStructureCheck:
         (adr_dir / "000001-foo.md").write_text(body)
         errors = validate_repo(adr_dir)
         assert any("Authors" in e for e in errors)
+
+    def test_passes_with_crlf_line_endings(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        crlf = adr_factory({"name": "foo"}).replace("\n", "\r\n")
+        (adr_dir / "000001-foo.md").write_text(crlf)
+        errors = validate_repo(adr_dir)
+        assert [e for e in errors if "h1" in e.lower() or "header table" in e.lower()] == []
