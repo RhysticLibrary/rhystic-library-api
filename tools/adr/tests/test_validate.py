@@ -91,3 +91,28 @@ class TestFrontmatterSchemaCheck:
         }))
         errors = validate_repo(adr_dir)
         assert any("supersedes" in e.lower() and "000099" in e for e in errors)
+
+
+class TestTagMembershipCheck:
+    def test_passes_when_all_tags_known(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory({
+            "name": "foo", "tags": "[meta, process]",
+        }))
+        errors = validate_repo(adr_dir)
+        assert [e for e in errors if "unknown tag" in e.lower()] == []
+
+    def test_fails_on_unknown_tag(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory({
+            "name": "foo", "tags": "[meta, ghost]",
+        }))
+        errors = validate_repo(adr_dir)
+        assert any("unknown tag" in e.lower() and "ghost" in e for e in errors)
+
+    def test_fails_when_tags_file_missing(self, tmp_path, adr_factory):
+        adr_dir = tmp_path / "docs" / "adr"
+        adr_dir.mkdir(parents=True)
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo"}))
+        errors = validate_repo(adr_dir)
+        assert any("_tags.md" in e for e in errors)

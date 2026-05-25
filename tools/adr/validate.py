@@ -4,7 +4,7 @@ import re
 from datetime import date
 from pathlib import Path
 
-from adr_lib import enumerate_adrs, parse_frontmatter
+from adr_lib import enumerate_adrs, parse_frontmatter, parse_tags_file
 
 
 _FILENAME_RE = re.compile(r"^(?P<id>\d{6})-(?P<slug>[a-z0-9-]+)\.md$")
@@ -69,11 +69,32 @@ def _check_frontmatter_schema(paths: list[Path]) -> list[str]:
     return errors
 
 
+def _check_tag_membership(adr_dir: Path, paths: list[Path]) -> list[str]:
+    errors: list[str] = []
+    tags_path = adr_dir / "_tags.md"
+    if not tags_path.is_file():
+        errors.append(f"_tags.md missing at {tags_path}")
+        return errors
+    allowed = set(parse_tags_file(tags_path).keys())
+    for path in paths:
+        try:
+            fm = parse_frontmatter(path.read_text())
+        except ValueError:
+            continue
+        for tag in fm.get("tags", []) or []:
+            if tag not in allowed:
+                errors.append(
+                    f"{path.name}: unknown tag {tag!r} (add it to _tags.md before use)"
+                )
+    return errors
+
+
 def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
     errors: list[str] = []
     paths = enumerate_adrs(adr_dir)
     errors.extend(_check_numbering(paths))
     errors.extend(_check_frontmatter_schema(paths))
+    errors.extend(_check_tag_membership(adr_dir, paths))
     return errors
 
 
