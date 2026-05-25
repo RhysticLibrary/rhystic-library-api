@@ -16,7 +16,11 @@ def main(argv: list[str] | None = None) -> int:
 
     for path in enumerate_adrs(args.adr_dir):
         if path.name.startswith(f"{args.adr_id}-"):
-            fm = parse_frontmatter(path.read_text())
+            try:
+                fm = parse_frontmatter(path.read_text())
+            except (ValueError, TypeError) as exc:
+                print(f"error: ADR {args.adr_id} ({path.name}) is unparseable: {exc}", file=sys.stderr)
+                return 2
             print(json.dumps(fm, indent=2, sort_keys=True))
             return 0
     print(f"ADR {args.adr_id} not found in {args.adr_dir}", file=sys.stderr)

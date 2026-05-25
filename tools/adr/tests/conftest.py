@@ -18,7 +18,7 @@ def make_frontmatter(**overrides: object) -> str:
         "superseded-by": "[]",
         "tags": "[meta]",
     }
-    defaults.update({k: v for k, v in overrides.items()})
+    defaults.update(overrides)
     lines = ["---"]
     for key, value in defaults.items():
         lines.append(f"{key}: {value}")

@@ -41,10 +41,6 @@ def _normalize_list(value: object) -> str:
     return str(value)
 
 
-def _normalize_table_list(value: str) -> str:
-    return value.strip()
-
-
 def _check_consistency(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -78,11 +74,10 @@ def _check_consistency(paths: list[Path]) -> list[str]:
                     errors.append(
                         f"{path.name}: {label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}"
                     )
-            else:
-                if str(fm_value) != table_value:
-                    errors.append(
-                        f"{path.name}: {label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}"
-                    )
+            elif str(fm_value) != table_value:
+                errors.append(
+                    f"{path.name}: {label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}"
+                )
     return errors
 
 
@@ -93,7 +88,7 @@ def _check_body_structure(paths: list[Path]) -> list[str]:
         body = _body_after_frontmatter(text).lstrip("\n")
 
         # H1 check
-        first_meaningful = next((l for l in body.splitlines() if l.strip()), "")
+        first_meaningful = next((line for line in body.splitlines() if line.strip()), "")
         if not first_meaningful.startswith("# "):
             errors.append(f"{path.name}: expected H1 immediately after frontmatter")
             continue
