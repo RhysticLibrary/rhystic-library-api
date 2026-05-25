@@ -3,6 +3,7 @@
 Kept separate from ``adr_lib`` so the parsing library stays focused on input
 handling and doesn't grow output-formatting responsibilities.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -15,9 +16,4 @@ def summary_line(fm: dict[str, Any]) -> str:
     ``list_adrs.py`` and ``find_adrs.py`` so both produce identical output.
     """
     tags = ",".join(fm.get("tags", []) or [])
-    return (
-        f"{fm.get('id', '------')}\t"
-        f"{fm.get('status', '?')}\t"
-        f"[{tags}]\t"
-        f"{fm.get('description', '')}"
-    )
+    return f"{fm.get('id', '------')}\t{fm.get('status', '?')}\t[{tags}]\t{fm.get('description', '')}"

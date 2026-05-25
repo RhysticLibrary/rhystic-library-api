@@ -3,6 +3,33 @@ testpaths = ["tools/adr/tests"]
 pythonpath = ["tools/adr"]
 addopts = "-ra --strict-markers"
 
+[tool.coverage.run]
+source = ["tools/adr"]
+omit = [
+    "tools/adr/tests/*",
+    # Skill CLI scripts are exercised end-to-end via subprocess in
+    # test_skill_scripts.py. coverage.py doesn't follow subprocess
+    # boundaries, so these would show 0% despite being thoroughly tested.
+    # Excluded to keep the threshold meaningful for the directly-tested
+    # library code.
+    "tools/adr/list_adrs.py",
+    "tools/adr/find_adrs.py",
+    "tools/adr/show_adr.py",
+    "tools/adr/list_tags.py",
+    "tools/adr/tag_usage.py",
+    "tools/adr/new_adr.py",
+    "tools/adr/add_tag.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    'if __name__ == "__main__":',
+]
+# Threshold is set at the current floor minus a small margin; raise as
+# coverage improves. Drops below this fail CI.
+fail_under = 92
+
 [tool.ruff]
 target-version = "py310"
 line-length = 120
@@ -17,3 +44,6 @@ ignore = [
     # Long messages outside the exception class are fine for our small CLI tools.
     "TRY003",
 ]
+
+[tool.ruff.format]
+# Defaults are sensible (double quotes, 88-char default; line-length above wins).

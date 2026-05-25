@@ -1,4 +1,5 @@
 """Scaffold a new ADR by copying _template.md and filling id/name/date."""
+
 from __future__ import annotations
 
 import argparse
@@ -30,22 +31,13 @@ def main(argv: list[str] | None = None) -> int:
     # Compute next ID from filenames only — never trust frontmatter for this.
     # A stray draft.md or a malformed prior ADR shouldn't crash the scaffold or
     # produce a wrong next-ID.
-    valid_ids = [
-        int(m.group("id"))
-        for path in enumerate_adrs(args.adr_dir)
-        if (m := ADR_FILENAME_RE.match(path.name))
-    ]
+    valid_ids = [int(m.group("id")) for path in enumerate_adrs(args.adr_dir) if (m := ADR_FILENAME_RE.match(path.name))]
     next_id = max(valid_ids, default=0) + 1
     new_id = f"{next_id:06d}"
 
     today = date.today().isoformat()
     template = template_path.read_text()
-    filled = (
-        template
-        .replace("{{id}}", new_id)
-        .replace("{{name}}", args.slug)
-        .replace("{{date-proposed}}", today)
-    )
+    filled = template.replace("{{id}}", new_id).replace("{{name}}", args.slug).replace("{{date-proposed}}", today)
 
     out_path = args.adr_dir / f"{new_id}-{args.slug}.md"
     if out_path.exists():

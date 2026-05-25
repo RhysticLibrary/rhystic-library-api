@@ -1,4 +1,5 @@
 """Tests for the ADR validator."""
+
 from __future__ import annotations
 
 from validate import validate_repo
@@ -78,10 +79,7 @@ class TestFrontmatterSchemaCheck:
         adr_dir = adr_repo / "docs" / "adr"
         fm_text = fm_factory(name="foo")
         # Strip the description line.
-        fm_text = (
-            "\n".join(line for line in fm_text.splitlines() if not line.startswith("description:"))
-            + "\n"
-        )
+        fm_text = "\n".join(line for line in fm_text.splitlines() if not line.startswith("description:")) + "\n"
         sections = (
             "\n## Context and Problem Statement\nx\n"
             "## Considered Options\nx\n"
@@ -101,9 +99,14 @@ class TestFrontmatterSchemaCheck:
 
     def test_fails_on_invalid_date_format(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "date-proposed": '"not-a-date"',
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "date-proposed": '"not-a-date"',
+                }
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("date-proposed" in e for e in errors)
 
@@ -115,9 +118,14 @@ class TestFrontmatterSchemaCheck:
 
     def test_fails_when_supersedes_references_missing_adr(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "supersedes": '["000099"]',
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "supersedes": '["000099"]',
+                }
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("supersedes" in e.lower() and "000099" in e for e in errors)
 
@@ -125,17 +133,27 @@ class TestFrontmatterSchemaCheck:
 class TestTagMembershipCheck:
     def test_passes_when_all_tags_known(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "tags": "[meta, process]",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "tags": "[meta, process]",
+                }
+            )
+        )
         errors = validate_repo(adr_dir)
         assert [e for e in errors if "unknown tag" in e.lower()] == []
 
     def test_fails_on_unknown_tag(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "tags": "[meta, ghost]",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "tags": "[meta, ghost]",
+                }
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("unknown tag" in e.lower() and "ghost" in e for e in errors)
 
@@ -175,9 +193,12 @@ class TestBodyStructureCheck:
 
     def test_fails_when_authors_empty(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory(
-            {"name": "foo"}, table_overrides={"Authors": "—"},
-        ))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {"name": "foo"},
+                table_overrides={"Authors": "—"},
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("Authors" in e for e in errors)
 
@@ -218,48 +239,58 @@ class TestBodyStructureCheck:
 class TestFrontmatterTableConsistency:
     def test_fails_when_status_differs(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory(
-            {"name": "foo", "status": "Accepted"},
-            table_overrides={"Status": "Proposed"},
-        ))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {"name": "foo", "status": "Accepted"},
+                table_overrides={"Status": "Proposed"},
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("Status" in e and "frontmatter" in e.lower() for e in errors)
 
     def test_fails_when_date_proposed_differs(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory(
-            {"name": "foo", "date-proposed": '"2026-05-24"'},
-            table_overrides={"Date Proposed": "2026-05-25"},
-        ))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {"name": "foo", "date-proposed": '"2026-05-24"'},
+                table_overrides={"Date Proposed": "2026-05-25"},
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("Date Proposed" in e for e in errors)
 
     def test_empty_date_pairs_with_emdash(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
         # Both empty ↔ em-dash: valid pairing.
-        (adr_dir / "000001-foo.md").write_text(adr_factory(
-            {"name": "foo", "date-invalidated": '""'},
-            table_overrides={"Date Invalidated": "—"},
-        ))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {"name": "foo", "date-invalidated": '""'},
+                table_overrides={"Date Invalidated": "—"},
+            )
+        )
         errors = validate_repo(adr_dir)
         assert [e for e in errors if "Date Invalidated" in e] == []
 
     def test_fails_when_tags_differ(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory(
-            {"name": "foo", "tags": "[meta, process]"},
-            table_overrides={"Tags": "meta"},
-        ))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {"name": "foo", "tags": "[meta, process]"},
+                table_overrides={"Tags": "meta"},
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("Tags" in e for e in errors)
 
     def test_fails_when_supersedes_differs(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
         (adr_dir / "000001-foo.md").write_text(adr_factory({"id": '"000001"', "name": "foo"}))
-        (adr_dir / "000002-bar.md").write_text(adr_factory(
-            {"id": '"000002"', "name": "bar", "supersedes": '["000001"]'},
-            table_overrides={"Supersedes": "—"},
-        ))
+        (adr_dir / "000002-bar.md").write_text(
+            adr_factory(
+                {"id": '"000002"', "name": "bar", "supersedes": '["000001"]'},
+                table_overrides={"Supersedes": "—"},
+            )
+        )
         errors = validate_repo(adr_dir)
         assert any("Supersedes" in e for e in errors)
 
@@ -267,66 +298,117 @@ class TestFrontmatterTableConsistency:
 class TestMergeGate:
     def test_off_by_default(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "status": "Proposed",
-            "date-accepted": '""', "date-invalidated": '""',
-        }, table_overrides={
-            "Status": "Proposed", "Date Accepted": "—", "Date Invalidated": "—",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "status": "Proposed",
+                    "date-accepted": '""',
+                    "date-invalidated": '""',
+                },
+                table_overrides={
+                    "Status": "Proposed",
+                    "Date Accepted": "—",
+                    "Date Invalidated": "—",
+                },
+            )
+        )
         errors = validate_repo(adr_dir, merge_gate=False)
         assert [e for e in errors if "merge gate" in e.lower()] == []
 
     def test_blocks_proposed_under_strict(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "status": "Proposed",
-            "date-accepted": '""', "date-invalidated": '""',
-        }, table_overrides={
-            "Status": "Proposed", "Date Accepted": "—", "Date Invalidated": "—",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "status": "Proposed",
+                    "date-accepted": '""',
+                    "date-invalidated": '""',
+                },
+                table_overrides={
+                    "Status": "Proposed",
+                    "Date Accepted": "—",
+                    "Date Invalidated": "—",
+                },
+            )
+        )
         errors = validate_repo(adr_dir, merge_gate=True)
         assert any("merge gate" in e.lower() and "Proposed" in e for e in errors)
 
     def test_accepted_requires_date_accepted(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "status": "Accepted", "date-accepted": '""',
-        }, table_overrides={"Date Accepted": "—"}))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "status": "Accepted",
+                    "date-accepted": '""',
+                },
+                table_overrides={"Date Accepted": "—"},
+            )
+        )
         errors = validate_repo(adr_dir, merge_gate=True)
         assert any("date-accepted" in e for e in errors)
 
     def test_superseded_requires_date_invalidated_and_supersededby(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "status": "Superseded",
-            "date-accepted": '"2026-05-24"', "date-invalidated": '""',
-            "superseded-by": "[]",
-        }, table_overrides={
-            "Status": "Superseded", "Date Invalidated": "—", "Superseded By": "—",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "status": "Superseded",
+                    "date-accepted": '"2026-05-24"',
+                    "date-invalidated": '""',
+                    "superseded-by": "[]",
+                },
+                table_overrides={
+                    "Status": "Superseded",
+                    "Date Invalidated": "—",
+                    "Superseded By": "—",
+                },
+            )
+        )
         errors = validate_repo(adr_dir, merge_gate=True)
         assert any("date-invalidated" in e for e in errors)
         assert any("superseded-by" in e for e in errors)
 
     def test_invalidated_must_be_on_or_after_accepted(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "status": "Deprecated",
-            "date-accepted": '"2026-05-24"', "date-invalidated": '"2026-05-20"',
-        }, table_overrides={
-            "Status": "Deprecated", "Date Invalidated": "2026-05-20",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "status": "Deprecated",
+                    "date-accepted": '"2026-05-24"',
+                    "date-invalidated": '"2026-05-20"',
+                },
+                table_overrides={
+                    "Status": "Deprecated",
+                    "Date Invalidated": "2026-05-20",
+                },
+            )
+        )
         errors = validate_repo(adr_dir, merge_gate=True)
         assert any("on or after" in e.lower() for e in errors)
 
     def test_proposed_must_have_empty_date_invalidated(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "name": "foo", "status": "Proposed",
-            "date-accepted": '""', "date-invalidated": '"2026-05-25"',
-        }, table_overrides={
-            "Status": "Proposed", "Date Accepted": "—", "Date Invalidated": "2026-05-25",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "name": "foo",
+                    "status": "Proposed",
+                    "date-accepted": '""',
+                    "date-invalidated": '"2026-05-25"',
+                },
+                table_overrides={
+                    "Status": "Proposed",
+                    "Date Accepted": "—",
+                    "Date Invalidated": "2026-05-25",
+                },
+            )
+        )
         # merge_gate=False still runs the empty-invalidated rule? Per spec, this is a
         # merge-gate rule, so it's only enforced under strict mode.
         errors_loose = validate_repo(adr_dir, merge_gate=False)

@@ -1,4 +1,5 @@
 """List every allowed ADR tag and its description."""
+
 from __future__ import annotations
 
 import argparse

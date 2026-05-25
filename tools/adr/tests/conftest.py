@@ -1,4 +1,5 @@
 """Shared pytest fixtures for ADR script tests."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -40,10 +41,20 @@ def make_header_table(**overrides: str) -> str:
         "Tags": "meta",
     }
     defaults.update(overrides)
-    rows = ["| Field            | Value                                |",
-            "|------------------|--------------------------------------|"]
-    for key in ["Status", "Date Proposed", "Date Accepted", "Date Invalidated",
-                "Authors", "Supersedes", "Superseded By", "Tags"]:
+    rows = [
+        "| Field            | Value                                |",
+        "|------------------|--------------------------------------|",
+    ]
+    for key in [
+        "Status",
+        "Date Proposed",
+        "Date Accepted",
+        "Date Invalidated",
+        "Authors",
+        "Supersedes",
+        "Superseded By",
+        "Tags",
+    ]:
         rows.append(f"| {key:<16} | {defaults[key]:<36} |")
     return "\n".join(rows) + "\n"
 
@@ -86,11 +97,13 @@ def adr_repo(tmp_path: Path) -> Path:
     """Returns a temp dir with docs/adr/ and a seed _tags.md."""
     adr_dir = tmp_path / "docs" / "adr"
     adr_dir.mkdir(parents=True)
-    (adr_dir / "_tags.md").write_text(dedent("""
+    (adr_dir / "_tags.md").write_text(
+        dedent("""
         # Allowed ADR Tags
 
         - **documentation** — Decisions about docs.
         - **meta** — Decisions about the ADR process itself.
         - **process** — Decisions about how work is done.
-        """).lstrip())
+        """).lstrip()
+    )
     return tmp_path

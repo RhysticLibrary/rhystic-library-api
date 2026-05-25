@@ -1,4 +1,5 @@
 """Tests for skill helper scripts."""
+
 from __future__ import annotations
 
 import json
@@ -22,12 +23,24 @@ def run_script(script: str, *args: str, cwd: Path) -> subprocess.CompletedProces
 class TestListAdrs:
     def test_prints_one_line_per_adr_sorted(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000002-second.md").write_text(adr_factory({
-            "id": '"000002"', "name": "second", "description": "Second decision.",
-        }))
-        (adr_dir / "000001-first.md").write_text(adr_factory({
-            "id": '"000001"', "name": "first", "description": "First decision.",
-        }))
+        (adr_dir / "000002-second.md").write_text(
+            adr_factory(
+                {
+                    "id": '"000002"',
+                    "name": "second",
+                    "description": "Second decision.",
+                }
+            )
+        )
+        (adr_dir / "000001-first.md").write_text(
+            adr_factory(
+                {
+                    "id": '"000001"',
+                    "name": "first",
+                    "description": "First decision.",
+                }
+            )
+        )
         result = run_script("list_adrs.py", "--adr-dir", "docs/adr", cwd=adr_repo)
         assert result.returncode == 0, result.stderr
         lines = result.stdout.strip().splitlines()
@@ -45,15 +58,29 @@ class TestListAdrs:
 class TestFindAdrs:
     def _seed(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-auth.md").write_text(adr_factory({
-            "id": '"000001"', "name": "auth",
-            "description": "Auth decision.", "tags": "[process]",
-        }))
-        (adr_dir / "000002-logging.md").write_text(adr_factory({
-            "id": '"000002"', "name": "logging",
-            "description": "Logging decision.", "tags": "[meta]",
-            "status": "Deprecated", "date-invalidated": '"2026-05-24"',
-        }, table_overrides={"Status": "Deprecated", "Date Invalidated": "2026-05-24", "Tags": "meta"}))
+        (adr_dir / "000001-auth.md").write_text(
+            adr_factory(
+                {
+                    "id": '"000001"',
+                    "name": "auth",
+                    "description": "Auth decision.",
+                    "tags": "[process]",
+                }
+            )
+        )
+        (adr_dir / "000002-logging.md").write_text(
+            adr_factory(
+                {
+                    "id": '"000002"',
+                    "name": "logging",
+                    "description": "Logging decision.",
+                    "tags": "[meta]",
+                    "status": "Deprecated",
+                    "date-invalidated": '"2026-05-24"',
+                },
+                table_overrides={"Status": "Deprecated", "Date Invalidated": "2026-05-24", "Tags": "meta"},
+            )
+        )
         return adr_dir
 
     def test_filter_by_tag(self, adr_repo, adr_factory):
@@ -77,8 +104,13 @@ class TestFindAdrs:
     def test_filters_and_together(self, adr_repo, adr_factory):
         self._seed(adr_repo, adr_factory)
         result = run_script(
-            "find_adrs.py", "--adr-dir", "docs/adr",
-            "--status", "Accepted", "--tag", "meta",
+            "find_adrs.py",
+            "--adr-dir",
+            "docs/adr",
+            "--status",
+            "Accepted",
+            "--tag",
+            "meta",
             cwd=adr_repo,
         )
         # 000002 has tag meta but status Deprecated; AND eliminates it.
@@ -114,12 +146,24 @@ class TestListTags:
 class TestTagUsage:
     def test_reports_usage_per_tag(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
-        (adr_dir / "000001-foo.md").write_text(adr_factory({
-            "id": '"000001"', "name": "foo", "tags": "[meta, process]",
-        }))
-        (adr_dir / "000002-bar.md").write_text(adr_factory({
-            "id": '"000002"', "name": "bar", "tags": "[meta]",
-        }))
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {
+                    "id": '"000001"',
+                    "name": "foo",
+                    "tags": "[meta, process]",
+                }
+            )
+        )
+        (adr_dir / "000002-bar.md").write_text(
+            adr_factory(
+                {
+                    "id": '"000002"',
+                    "name": "bar",
+                    "tags": "[meta]",
+                }
+            )
+        )
         result = run_script("tag_usage.py", "--adr-dir", "docs/adr", cwd=adr_repo)
         assert result.returncode == 0
         lines = result.stdout.strip().splitlines()
@@ -133,11 +177,7 @@ class TestTagUsage:
 class TestNewAdr:
     def _write_template(self, adr_dir: Path) -> None:
         (adr_dir / "_template.md").write_text(
-            "---\n"
-            'id: "{{id}}"\n'
-            "name: {{name}}\n"
-            'date-proposed: "{{date-proposed}}"\n'
-            "---\n\n# ADR {{id}}: TITLE\n"
+            '---\nid: "{{id}}"\nname: {{name}}\ndate-proposed: "{{date-proposed}}"\n---\n\n# ADR {{id}}: TITLE\n'
         )
 
     def test_creates_first_adr_with_id_000001(self, adr_repo):
@@ -170,8 +210,12 @@ class TestAddTag:
     def test_inserts_in_alphabetical_order(self, adr_repo):
         adr_dir = adr_repo / "docs" / "adr"
         result = run_script(
-            "add_tag.py", "ci", "Decisions about CI pipelines.",
-            "--adr-dir", "docs/adr", cwd=adr_repo,
+            "add_tag.py",
+            "ci",
+            "Decisions about CI pipelines.",
+            "--adr-dir",
+            "docs/adr",
+            cwd=adr_repo,
         )
         assert result.returncode == 0, result.stderr
         text = (adr_dir / "_tags.md").read_text()
@@ -188,8 +232,12 @@ class TestAddTag:
         adr_dir = adr_repo / "docs" / "adr"
         before = (adr_dir / "_tags.md").read_text()
         result = run_script(
-            "add_tag.py", "meta", "Already exists.",
-            "--adr-dir", "docs/adr", cwd=adr_repo,
+            "add_tag.py",
+            "meta",
+            "Already exists.",
+            "--adr-dir",
+            "docs/adr",
+            cwd=adr_repo,
         )
         assert result.returncode == 0
         assert (adr_dir / "_tags.md").read_text() == before

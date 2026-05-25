@@ -13,23 +13,32 @@ Start with [`000001-adr-process-and-structure.md`](docs/adr/000001-adr-process-a
 
 ## Development
 
-Set up the Python tooling used by ADR scripts and CI:
+Requires **Python 3.10+** (CI uses 3.12). Set up the dev environment:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
+pre-commit install   # one-time: enables format + lint + ADR validation on every commit
 ```
 
-Run the ADR test suite:
+Run the test suite (with coverage):
 
 ```bash
-pytest
+pytest --cov=tools/adr
+```
+
+Lint and format Python locally (CI checks the same):
+
+```bash
+ruff check tools/adr
+ruff format tools/adr            # auto-fixes formatting
+ruff format --check tools/adr    # CI-style check
 ```
 
 Validate ADRs locally:
 
 ```bash
-python tools/adr/validate.py            # development mode
-python tools/adr/validate.py --merge-gate  # CI mode
+python tools/adr/validate.py              # development mode (no merge gate)
+python tools/adr/validate.py --merge-gate # CI mode
 ```

@@ -1,4 +1,5 @@
 """ADR validator. Returns a list of error messages; empty list means valid."""
+
 from __future__ import annotations
 
 import re
@@ -18,9 +19,16 @@ from adr_lib import (
 _FRONTMATTER_BLOCK_RE = re.compile(r"\A---\r?\n.*?\r?\n---\r?\n", re.DOTALL)
 _ALLOWED_STATUSES = {"Proposed", "Accepted", "Deprecated", "Superseded"}
 _REQUIRED_FIELDS = (
-    "id", "name", "description", "status",
-    "date-proposed", "date-accepted", "date-invalidated",
-    "supersedes", "superseded-by", "tags",
+    "id",
+    "name",
+    "description",
+    "status",
+    "date-proposed",
+    "date-accepted",
+    "date-invalidated",
+    "supersedes",
+    "superseded-by",
+    "tags",
 )
 _REQUIRED_SECTIONS = (
     "Context and Problem Statement",
@@ -29,17 +37,24 @@ _REQUIRED_SECTIONS = (
     "Consequences",
 )
 _REQUIRED_TABLE_FIELDS = (
-    "Status", "Date Proposed", "Date Accepted", "Date Invalidated",
-    "Authors", "Supersedes", "Superseded By", "Tags",
+    "Status",
+    "Date Proposed",
+    "Date Accepted",
+    "Date Invalidated",
+    "Authors",
+    "Supersedes",
+    "Superseded By",
+    "Tags",
 )
 _ID_REF_RE = re.compile(r"^\d{6}$")
 
 
 # --- Small shared helpers ---------------------------------------------------
 
+
 def _body_after_frontmatter(text: str) -> str:
     match = _FRONTMATTER_BLOCK_RE.match(text)
-    return text[match.end():] if match else text
+    return text[match.end() :] if match else text
 
 
 def _is_iso_date(value: object) -> bool:
@@ -63,14 +78,11 @@ def _normalize_list(value: object) -> str:
 
 def _existing_ids(paths: list[Path]) -> set[str]:
     """Return the set of valid 6-digit IDs derived from the path filenames."""
-    return {
-        match.group("id")
-        for path in paths
-        if (match := ADR_FILENAME_RE.match(path.name)) is not None
-    }
+    return {match.group("id") for path in paths if (match := ADR_FILENAME_RE.match(path.name)) is not None}
 
 
 # --- Numbering check -------------------------------------------------------
+
 
 def _check_numbering(paths: list[Path]) -> list[str]:
     errors: list[str] = []
@@ -84,9 +96,7 @@ def _check_numbering(paths: list[Path]) -> list[str]:
             continue
         fid, fslug = match.group("id"), match.group("slug")
         if fid in seen_ids:
-            errors.append(
-                f"{path.name}: duplicate ID {fid} (also used by {seen_ids[fid].name})"
-            )
+            errors.append(f"{path.name}: duplicate ID {fid} (also used by {seen_ids[fid].name})")
             continue
         seen_ids[fid] = path
         parsed.append((path, fid, fslug))
@@ -105,13 +115,9 @@ def _check_filename_matches_frontmatter(parsed: list[tuple[Path, str, str]]) -> 
             errors.append(f"{path.name}: {exc}")
             continue
         if str(fm.get("id", "")) != fid:
-            errors.append(
-                f"{path.name}: filename id {fid} does not match frontmatter id {fm.get('id')!r}"
-            )
+            errors.append(f"{path.name}: filename id {fid} does not match frontmatter id {fm.get('id')!r}")
         if fm.get("name") != fslug:
-            errors.append(
-                f"{path.name}: filename slug {fslug!r} does not match frontmatter name {fm.get('name')!r}"
-            )
+            errors.append(f"{path.name}: filename slug {fslug!r} does not match frontmatter name {fm.get('name')!r}")
     return errors
 
 
@@ -124,6 +130,7 @@ def _check_no_id_gaps(ids_in_order: list[str]) -> list[str]:
 
 
 # --- Frontmatter schema check ----------------------------------------------
+
 
 def _check_frontmatter_schema(paths: list[Path]) -> list[str]:
     """Orchestrator: per ADR, run each schema sub-check and collect errors."""
@@ -141,18 +148,14 @@ def _check_frontmatter_schema(paths: list[Path]) -> list[str]:
 
 def _check_required_fields_present(path: Path, fm: dict[str, Any]) -> list[str]:
     return [
-        f"{path.name}: missing required frontmatter field '{field}'"
-        for field in _REQUIRED_FIELDS if field not in fm
+        f"{path.name}: missing required frontmatter field '{field}'" for field in _REQUIRED_FIELDS if field not in fm
     ]
 
 
 def _check_status_allowed(path: Path, fm: dict[str, Any]) -> list[str]:
     if fm.get("status") in _ALLOWED_STATUSES:
         return []
-    return [
-        f"{path.name}: status {fm.get('status')!r} is unknown; "
-        f"must be one of {sorted(_ALLOWED_STATUSES)}"
-    ]
+    return [f"{path.name}: status {fm.get('status')!r} is unknown; must be one of {sorted(_ALLOWED_STATUSES)}"]
 
 
 def _check_description_non_empty(path: Path, fm: dict[str, Any]) -> list[str]:
@@ -165,16 +168,11 @@ def _check_description_non_empty(path: Path, fm: dict[str, Any]) -> list[str]:
 def _check_date_fields(path: Path, fm: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if not _is_iso_date(fm.get("date-proposed")):
-        errors.append(
-            f"{path.name}: date-proposed must be ISO-8601 (YYYY-MM-DD), "
-            f"got {fm.get('date-proposed')!r}"
-        )
+        errors.append(f"{path.name}: date-proposed must be ISO-8601 (YYYY-MM-DD), got {fm.get('date-proposed')!r}")
     for date_field in ("date-accepted", "date-invalidated"):
         value = fm.get(date_field)
         if value not in ("", None) and not _is_iso_date(value):
-            errors.append(
-                f"{path.name}: {date_field} must be ISO-8601 or empty, got {value!r}"
-            )
+            errors.append(f"{path.name}: {date_field} must be ISO-8601 or empty, got {value!r}")
     return errors
 
 
@@ -186,7 +184,9 @@ def _check_tags_non_empty(path: Path, fm: dict[str, Any]) -> list[str]:
 
 
 def _check_id_references_exist(
-    path: Path, fm: dict[str, Any], existing: set[str],
+    path: Path,
+    fm: dict[str, Any],
+    existing: set[str],
 ) -> list[str]:
     errors: list[str] = []
     for ref_field in ("supersedes", "superseded-by"):
@@ -196,9 +196,7 @@ def _check_id_references_exist(
             continue
         for ref in refs:
             if not (isinstance(ref, str) and _ID_REF_RE.fullmatch(ref)):
-                errors.append(
-                    f"{path.name}: {ref_field} entry {ref!r} must be a 6-digit ID string"
-                )
+                errors.append(f"{path.name}: {ref_field} entry {ref!r} must be a 6-digit ID string")
                 continue
             if ref not in existing:
                 errors.append(f"{path.name}: {ref_field} references unknown ADR {ref}")
@@ -206,6 +204,7 @@ def _check_id_references_exist(
 
 
 # --- Tag membership check --------------------------------------------------
+
 
 def _check_tag_membership(adr_dir: Path, paths: list[Path]) -> list[str]:
     tags_path = adr_dir / "_tags.md"
@@ -216,13 +215,12 @@ def _check_tag_membership(adr_dir: Path, paths: list[Path]) -> list[str]:
     for path, fm in iter_frontmatters(paths):
         for tag in fm.get("tags") or []:
             if tag not in allowed:
-                errors.append(
-                    f"{path.name}: unknown tag {tag!r} (add it to _tags.md before use)"
-                )
+                errors.append(f"{path.name}: unknown tag {tag!r} (add it to _tags.md before use)")
     return errors
 
 
 # --- Body structure check --------------------------------------------------
+
 
 def _check_body_structure(paths: list[Path]) -> list[str]:
     errors: list[str] = []
@@ -248,8 +246,7 @@ def _check_header_table(path: Path, body: str) -> list[str]:
     except ValueError as exc:
         return [f"{path.name}: {exc}"]
     errors = [
-        f"{path.name}: header table missing row '{field}'"
-        for field in _REQUIRED_TABLE_FIELDS if field not in table
+        f"{path.name}: header table missing row '{field}'" for field in _REQUIRED_TABLE_FIELDS if field not in table
     ]
     if table.get("Authors", "").strip() in ("", "—"):
         errors.append(f"{path.name}: Authors must be non-empty")
@@ -303,14 +300,12 @@ def _check_consistency(paths: list[Path]) -> list[str]:
             table_value = table.get(table_label, "").strip()
             expected = _expected_table_value(fm_value, kind)
             if expected != table_value:
-                errors.append(
-                    f"{path.name}: {table_label} mismatch — "
-                    f"frontmatter {fm_value!r} ↔ table {table_value!r}"
-                )
+                errors.append(f"{path.name}: {table_label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}")
     return errors
 
 
 # --- Merge gate check ------------------------------------------------------
+
 
 def _check_merge_gate(paths: list[Path]) -> list[str]:
     errors: list[str] = []
@@ -330,15 +325,11 @@ def _check_status_for_merge(path: Path, fm: dict[str, Any]) -> list[str]:
         errors.append(f"{path.name}: merge gate — status 'Proposed' blocks merge")
 
     if status in {"Accepted", "Deprecated", "Superseded"} and not _is_iso_date(date_accepted):
-        errors.append(
-            f"{path.name}: status {status!r} requires date-accepted to be a valid date"
-        )
+        errors.append(f"{path.name}: status {status!r} requires date-accepted to be a valid date")
 
     if status in {"Deprecated", "Superseded"}:
         if not _is_iso_date(date_invalidated):
-            errors.append(
-                f"{path.name}: status {status!r} requires date-invalidated to be a valid date"
-            )
+            errors.append(f"{path.name}: status {status!r} requires date-invalidated to be a valid date")
         elif _is_iso_date(date_accepted) and date_invalidated < date_accepted:
             errors.append(
                 f"{path.name}: date-invalidated ({date_invalidated}) "
@@ -346,19 +337,16 @@ def _check_status_for_merge(path: Path, fm: dict[str, Any]) -> list[str]:
             )
 
     if status in {"Proposed", "Accepted"} and date_invalidated:
-        errors.append(
-            f"{path.name}: status {status!r} requires date-invalidated to be empty"
-        )
+        errors.append(f"{path.name}: status {status!r} requires date-invalidated to be empty")
 
     if status == "Superseded" and not superseded_by:
-        errors.append(
-            f"{path.name}: status 'Superseded' requires non-empty superseded-by"
-        )
+        errors.append(f"{path.name}: status 'Superseded' requires non-empty superseded-by")
 
     return errors
 
 
 # --- Orchestrator + CLI ----------------------------------------------------
+
 
 def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
     errors: list[str] = []
@@ -375,10 +363,12 @@ def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
     parser = argparse.ArgumentParser(description="Validate ADR repository.")
     parser.add_argument("--adr-dir", type=Path, default=Path("docs/adr"))
     parser.add_argument(
-        "--merge-gate", action="store_true",
+        "--merge-gate",
+        action="store_true",
         help="Enforce the merge gate (status must be Accepted/Deprecated/Superseded).",
     )
     args = parser.parse_args(argv)

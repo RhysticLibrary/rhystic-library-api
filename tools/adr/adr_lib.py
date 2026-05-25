@@ -1,4 +1,5 @@
 """Shared helpers for ADR scripts."""
+
 from __future__ import annotations
 
 import re
@@ -44,8 +45,7 @@ def enumerate_adrs(adr_dir: Path) -> list[Path]:
     if not adr_dir.is_dir():
         return []
     matches = [
-        path for path in adr_dir.iterdir()
-        if path.is_file() and path.suffix == ".md" and not path.name.startswith("_")
+        path for path in adr_dir.iterdir() if path.is_file() and path.suffix == ".md" and not path.name.startswith("_")
     ]
     return sorted(matches, key=lambda p: p.name)
 

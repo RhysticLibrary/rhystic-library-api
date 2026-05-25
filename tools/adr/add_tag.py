@@ -1,4 +1,5 @@
 """Insert a new tag into _tags.md at the correct alphabetical position."""
+
 from __future__ import annotations
 
 import argparse
