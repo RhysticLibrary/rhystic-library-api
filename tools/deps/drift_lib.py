@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -78,6 +79,57 @@ def parse_precommit_config(path: Path, root: Path) -> list[Sighting]:
                         version=str(req.specifier) or "",
                     )
                 )
+    return sightings
+
+
+_INLINE_VERSION_RE = re.compile(r"\b([a-zA-Z][\w\-]*(?:/[a-zA-Z][\w\-]*)?)@(v?\d+(?:\.\d+)*)\b")
+
+
+def _walk(node):
+    """Yield every dict in a nested YAML structure."""
+    if isinstance(node, dict):
+        yield node
+        for value in node.values():
+            yield from _walk(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _walk(item)
+
+
+def parse_workflow(path: Path, root: Path) -> list[Sighting]:
+    """Extract sightings from a GitHub Actions workflow YAML file."""
+    with path.open() as fh:
+        data = yaml.safe_load(fh)
+
+    rel = str(path.relative_to(root))
+    sightings: list[Sighting] = []
+
+    for node in _walk(data):
+        uses_val = node.get("uses")
+        if isinstance(uses_val, str) and "@" in uses_val:
+            ref, version = uses_val.split("@", 1)
+            if ref and version:
+                sightings.append(
+                    Sighting(
+                        package=normalize_name(ref),
+                        file=rel,
+                        location="uses",
+                        version=version,
+                    )
+                )
+        run_val = node.get("run")
+        if isinstance(run_val, str):
+            for match in _INLINE_VERSION_RE.finditer(run_val):
+                ref, version = match.group(1), match.group(2)
+                sightings.append(
+                    Sighting(
+                        package=normalize_name(ref),
+                        file=rel,
+                        location="run",
+                        version=version,
+                    )
+                )
+
     return sightings
 
 

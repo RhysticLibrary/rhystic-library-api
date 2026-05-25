@@ -5,7 +5,7 @@ from __future__ import annotations
 from textwrap import dedent
 
 import pytest
-from drift_lib import Finding, Sighting, normalize_name, parse_precommit_config, parse_requirements
+from drift_lib import Finding, Sighting, normalize_name, parse_precommit_config, parse_requirements, parse_workflow
 
 
 class TestDataClasses:
@@ -148,3 +148,71 @@ class TestParseRequirements:
         assert sightings == [
             Sighting(package="ruff", file="requirements-dev.txt", location="line 1", version=""),
         ]
+
+
+class TestParseWorkflow:
+    def test_extracts_uses_action_pins(self, tmp_path):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        wf = wf_dir / "ci.yml"
+        wf.write_text(
+            dedent("""
+                jobs:
+                  build:
+                    runs-on: ubuntu-latest
+                    steps:
+                      - uses: actions/checkout@v6
+                      - uses: actions/setup-python@v6
+            """)
+        )
+        sightings = parse_workflow(wf, root=tmp_path)
+        packages = {s.package for s in sightings}
+        assert packages == {"actions/checkout", "actions/setup-python"}
+        for s in sightings:
+            assert s.version == "v6"
+            assert s.location == "uses"
+            assert s.file == ".github/workflows/ci.yml"
+
+    def test_extracts_inline_version_pins_in_run_blocks(self, tmp_path):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        wf = wf_dir / "ci.yml"
+        wf.write_text(
+            dedent("""
+                jobs:
+                  lint:
+                    runs-on: ubuntu-latest
+                    steps:
+                      - name: markdownlint
+                        run: npx --yes markdownlint-cli2@0.22.1 "**/*.md"
+            """)
+        )
+        sightings = parse_workflow(wf, root=tmp_path)
+        # uses: parser may or may not see anything; run-block parser should see one.
+        run_sightings = [s for s in sightings if s.location == "run"]
+        assert run_sightings == [
+            Sighting(
+                package="markdownlint-cli2",
+                file=".github/workflows/ci.yml",
+                location="run",
+                version="0.22.1",
+            ),
+        ]
+
+    def test_ignores_non_version_at_signs(self, tmp_path):
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        wf = wf_dir / "ci.yml"
+        wf.write_text(
+            dedent("""
+                jobs:
+                  build:
+                    runs-on: ubuntu-latest
+                    steps:
+                      - name: pull image
+                        run: docker pull foo/bar@sha256:abcdef
+            """)
+        )
+        sightings = parse_workflow(wf, root=tmp_path)
+        # The sha256 digest must not be captured as a version.
+        assert sightings == []
