@@ -5,7 +5,7 @@ from __future__ import annotations
 from textwrap import dedent
 
 import pytest
-from drift_lib import Finding, Sighting, normalize_name, parse_precommit_config
+from drift_lib import Finding, Sighting, normalize_name, parse_precommit_config, parse_requirements
 
 
 class TestDataClasses:
@@ -121,3 +121,30 @@ class TestParsePrecommitConfig:
         # Only the rev sighting — no additional_dependencies entries.
         assert len(sightings) == 1
         assert sightings[0].package == "pre-commit-hooks"
+
+
+class TestParseRequirements:
+    def test_extracts_pkg_and_specifier_with_line_number(self, tmp_path):
+        reqs = tmp_path / "requirements-dev.txt"
+        reqs.write_text("pytest>=9.0.3\npyyaml>=6.0.3\n")
+        sightings = parse_requirements(reqs, root=tmp_path)
+        assert sightings == [
+            Sighting(package="pytest", file="requirements-dev.txt", location="line 1", version=">=9.0.3"),
+            Sighting(package="pyyaml", file="requirements-dev.txt", location="line 2", version=">=6.0.3"),
+        ]
+
+    def test_skips_comments_and_blanks(self, tmp_path):
+        reqs = tmp_path / "requirements-dev.txt"
+        reqs.write_text("# top comment\n\npytest>=9.0.3\n  # indented\n")
+        sightings = parse_requirements(reqs, root=tmp_path)
+        assert len(sightings) == 1
+        assert sightings[0].package == "pytest"
+        assert sightings[0].location == "line 3"
+
+    def test_unpinned_entry_yields_empty_version(self, tmp_path):
+        reqs = tmp_path / "requirements-dev.txt"
+        reqs.write_text("ruff\n")
+        sightings = parse_requirements(reqs, root=tmp_path)
+        assert sightings == [
+            Sighting(package="ruff", file="requirements-dev.txt", location="line 1", version=""),
+        ]

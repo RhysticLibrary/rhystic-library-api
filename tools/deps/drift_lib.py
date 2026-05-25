@@ -79,3 +79,26 @@ def parse_precommit_config(path: Path, root: Path) -> list[Sighting]:
                     )
                 )
     return sightings
+
+
+def parse_requirements(path: Path, root: Path) -> list[Sighting]:
+    """Extract sightings from a pip ``requirements.txt``-style file."""
+    rel = str(path.relative_to(root))
+    sightings: list[Sighting] = []
+    for lineno, raw_line in enumerate(path.read_text().splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        try:
+            req = Requirement(line)
+        except InvalidRequirement:
+            continue
+        sightings.append(
+            Sighting(
+                package=normalize_name(req.name),
+                file=rel,
+                location=f"line {lineno}",
+                version=str(req.specifier),
+            )
+        )
+    return sightings
