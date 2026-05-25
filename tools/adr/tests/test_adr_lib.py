@@ -37,6 +37,12 @@ class TestParseFrontmatter:
         with pytest.raises(ValueError, match="malformed"):
             parse_frontmatter(text)
 
+    def test_accepts_crlf_line_endings(self, fm_factory):
+        crlf_text = fm_factory().replace("\n", "\r\n")
+        fm = parse_frontmatter(crlf_text)
+        assert fm["id"] == "000001"
+        assert fm["name"] == "test-adr"
+
 
 class TestEnumerateAdrs:
     def test_returns_empty_when_no_adrs(self, adr_repo):
@@ -86,6 +92,21 @@ class TestParseTagsFile:
         )
         tags = parse_tags_file(path)
         assert tags == {"alpha": "first tag.", "beta": "second tag."}
+
+    def test_accepts_en_dash_separator(self, tmp_path):
+        path = tmp_path / "_tags.md"
+        path.write_text(
+            "# Allowed ADR Tags\n\n"
+            "- **alpha** – en-dash separator.\n"
+            "- **beta** — em-dash separator.\n"
+            "- **gamma** - hyphen separator.\n"
+        )
+        tags = parse_tags_file(path)
+        assert tags == {
+            "alpha": "en-dash separator.",
+            "beta": "em-dash separator.",
+            "gamma": "hyphen separator.",
+        }
 
 
 class TestParseHeaderTable:

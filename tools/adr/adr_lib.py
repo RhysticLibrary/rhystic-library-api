@@ -7,9 +7,9 @@ from typing import Any
 import yaml
 
 
-_FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
+_FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 _ADR_FILENAME_RE = re.compile(r"^(\d{6})-[a-z0-9-]+\.md$")
-_TAG_LINE_RE = re.compile(r"^-\s*\*\*(?P<tag>[a-z0-9-]+)\*\*\s*[—-]\s*(?P<desc>.+?)\s*$")
+_TAG_LINE_RE = re.compile(r"^-\s*\*\*(?P<tag>[a-z0-9-]+)\*\*\s*[—–-]\s*(?P<desc>.+?)\s*$")
 _TABLE_ROW_RE = re.compile(r"^\|\s*(?P<key>[^|]+?)\s*\|\s*(?P<value>[^|]+?)\s*\|\s*$")
 
 
