@@ -62,6 +62,7 @@ convention = "pep257"
 # Tests document themselves through descriptive names + inline comments;
 # enforcing module / class / function docstrings here is noise.
 "tools/adr/tests/**" = ["D"]
+"tools/deps/tests/**" = ["D"]
 
 [tool.ruff.format]
 # Defaults are sensible (double quotes, 88-char default; line-length above wins).
