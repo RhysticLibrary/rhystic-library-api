@@ -6,7 +6,7 @@ exclude: ^docs/superpowers/
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -37,4 +37,4 @@ repos:
         language: python
         pass_filenames: false
         files: ^docs/adr/
-        additional_dependencies: ["pyyaml>=6.0"]
+        additional_dependencies: ["pyyaml>=6.0.3"]
