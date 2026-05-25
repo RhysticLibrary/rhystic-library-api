@@ -23,3 +23,12 @@ class Finding:
     status: str  # "drift" | "in_sync"
     sightings: list[Sighting]
     recommendation: str
+
+
+def normalize_name(name: str) -> str:
+    """Lowercase + collapse underscores to hyphens for cross-file matching.
+
+    Slashes are preserved so action references like ``actions/checkout`` keep
+    their namespace.
+    """
+    return name.lower().replace("_", "-")
