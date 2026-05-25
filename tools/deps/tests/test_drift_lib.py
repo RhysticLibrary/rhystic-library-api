@@ -13,6 +13,7 @@ from drift_lib import (
     parse_precommit_config,
     parse_requirements,
     parse_workflow,
+    scan_root,
 )
 
 
@@ -268,3 +269,16 @@ class TestAnalyzeSightings:
         assert ".github/workflows/b.yml" in f.recommendation
         assert ".github/workflows/c.yml" in f.recommendation
         assert "v6" in f.recommendation
+
+
+class TestScanRoot:
+    def test_clean_fixture_emits_only_in_sync_findings_or_empty(self, fixture_repo):
+        root = fixture_repo("clean")
+        findings = scan_root(root)
+        # All findings must be in_sync if any are present.
+        for f in findings:
+            assert f.status == "in_sync", f"unexpected drift in clean fixture: {f}"
+
+    def test_returns_empty_when_no_files_exist(self, tmp_path):
+        # tmp_path has none of the scanned files.
+        assert scan_root(tmp_path) == []

@@ -220,3 +220,23 @@ def parse_requirements(path: Path, root: Path) -> list[Sighting]:
             )
         )
     return sightings
+
+
+def scan_root(root: Path) -> list[Finding]:
+    """Scan a repo root for cross-file dependency drift."""
+    sightings: list[Sighting] = []
+
+    precommit = root / ".pre-commit-config.yaml"
+    if precommit.is_file():
+        sightings.extend(parse_precommit_config(precommit, root=root))
+
+    reqs = root / "requirements-dev.txt"
+    if reqs.is_file():
+        sightings.extend(parse_requirements(reqs, root=root))
+
+    workflows_dir = root / ".github" / "workflows"
+    if workflows_dir.is_dir():
+        for wf in sorted(workflows_dir.glob("*.yml")):
+            sightings.extend(parse_workflow(wf, root=root))
+
+    return analyze_sightings(sightings)
