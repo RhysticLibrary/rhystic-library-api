@@ -42,7 +42,7 @@ jobs:
       - name: Ruff format check
         run: ruff format --check tools/adr
 
-  tests:
+  python-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
