@@ -166,3 +166,32 @@ class TestNewAdr:
         self._write_template(adr_repo / "docs" / "adr")
         result = run_script("new_adr.py", "Bad Slug", "--adr-dir", "docs/adr", cwd=adr_repo)
         assert result.returncode != 0
+
+
+class TestAddTag:
+    def test_inserts_in_alphabetical_order(self, adr_repo):
+        adr_dir = adr_repo / "docs" / "adr"
+        result = run_script(
+            "add_tag.py", "ci", "Decisions about CI pipelines.",
+            "--adr-dir", "docs/adr", cwd=adr_repo,
+        )
+        assert result.returncode == 0, result.stderr
+        text = (adr_dir / "_tags.md").read_text()
+        lines = [l for l in text.splitlines() if l.startswith("- **")]
+        # ci sorts between documentation and meta? alpha order: ci, documentation, meta, process
+        assert lines == [
+            "- **ci** — Decisions about CI pipelines.",
+            "- **documentation** — Decisions about docs.",
+            "- **meta** — Decisions about the ADR process itself.",
+            "- **process** — Decisions about how work is done.",
+        ]
+
+    def test_no_op_when_tag_exists(self, adr_repo):
+        adr_dir = adr_repo / "docs" / "adr"
+        before = (adr_dir / "_tags.md").read_text()
+        result = run_script(
+            "add_tag.py", "meta", "Already exists.",
+            "--adr-dir", "docs/adr", cwd=adr_repo,
+        )
+        assert result.returncode == 0
+        assert (adr_dir / "_tags.md").read_text() == before
