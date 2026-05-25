@@ -1,10 +1,10 @@
 [tool.pytest.ini_options]
-testpaths = ["tools/adr/tests"]
-pythonpath = ["tools/adr"]
+testpaths = ["tools/adr/tests", "tools/deps/tests"]
+pythonpath = ["tools/adr", "tools/deps"]
 addopts = "-ra --strict-markers"
 
 [tool.coverage.run]
-source = ["tools/adr"]
+source = ["tools/adr", "tools/deps"]
 omit = [
     "tools/adr/tests/*",
     # Skill CLI scripts are exercised end-to-end via subprocess in
@@ -19,6 +19,7 @@ omit = [
     "tools/adr/tag_usage.py",
     "tools/adr/new_adr.py",
     "tools/adr/add_tag.py",
+    "tools/deps/check_drift.py",
 ]
 
 [tool.coverage.report]
