@@ -1,5 +1,6 @@
 """Print the frontmatter of a single ADR as JSON."""
 from __future__ import annotations
+
 import argparse
 import json
 import sys

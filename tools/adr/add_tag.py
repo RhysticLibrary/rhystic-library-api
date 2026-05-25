@@ -1,12 +1,12 @@
 """Insert a new tag into _tags.md at the correct alphabetical position."""
 from __future__ import annotations
+
 import argparse
 import re
 import sys
 from pathlib import Path
 
 from adr_lib import parse_tags_file
-
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _TAG_LINE_RE = re.compile(r"^-\s*\*\*([a-z0-9-]+)\*\*")

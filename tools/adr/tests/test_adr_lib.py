@@ -1,13 +1,12 @@
 """Tests for adr_lib helpers."""
 from __future__ import annotations
-from pathlib import Path
-import pytest
 
+import pytest
 from adr_lib import (
-    parse_frontmatter,
     enumerate_adrs,
-    parse_tags_file,
+    parse_frontmatter,
     parse_header_table,
+    parse_tags_file,
 )
 
 
@@ -107,10 +106,11 @@ class TestParseTagsFile:
         assert tags == {"alpha": "first tag.", "beta": "second tag."}
 
     def test_accepts_en_dash_separator(self, tmp_path):
+        # The "alpha" line below contains an intentional en-dash to exercise that path.
         path = tmp_path / "_tags.md"
         path.write_text(
             "# Allowed ADR Tags\n\n"
-            "- **alpha** – en-dash separator.\n"
+            "- **alpha** – en-dash separator.\n"  # noqa: RUF001
             "- **beta** — em-dash separator.\n"
             "- **gamma** - hyphen separator.\n"
         )

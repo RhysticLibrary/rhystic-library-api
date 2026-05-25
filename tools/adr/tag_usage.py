@@ -1,5 +1,6 @@
 """For each tag, list ADRs (by id) that use it."""
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
 

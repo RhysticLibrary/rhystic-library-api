@@ -24,6 +24,34 @@ jobs:
       - name: Run markdownlint
         run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#docs/superpowers/**"
 
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install -r requirements-dev.txt
+      - name: Run ruff
+        run: ruff check tools/adr
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python deps
+        run: pip install -r requirements-dev.txt
+      - name: Run pytest
+        run: pytest
+
   adr-validate:
     runs-on: ubuntu-latest
     steps:
@@ -37,5 +65,3 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Run validator (merge gate)
         run: python tools/adr/validate.py --merge-gate
-      - name: Run pytest
-        run: pytest

@@ -1,7 +1,9 @@
 """Shared pytest fixtures for ADR script tests."""
 from __future__ import annotations
+
 from pathlib import Path
 from textwrap import dedent
+
 import pytest
 
 

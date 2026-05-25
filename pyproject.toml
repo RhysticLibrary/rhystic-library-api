@@ -2,3 +2,18 @@
 testpaths = ["tools/adr/tests"]
 pythonpath = ["tools/adr"]
 addopts = "-ra --strict-markers"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = [".venv", "docs/superpowers"]
+
+[tool.ruff.lint]
+# Pragmatic selection — pycodestyle + pyflakes baseline, plus categories that
+# caught real defects in past reviews (RUF, TRY, C4, ARG, B, UP) and import
+# sorting (I).
+select = ["E", "F", "W", "I", "B", "RUF", "TRY", "C4", "ARG", "UP"]
+ignore = [
+    # Long messages outside the exception class are fine for our small CLI tools.
+    "TRY003",
+]

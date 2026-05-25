@@ -1,5 +1,6 @@
 """List every ADR with id, status, tags, description."""
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
 

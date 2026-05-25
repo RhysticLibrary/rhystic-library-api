@@ -1,5 +1,6 @@
 """Scaffold a new ADR by copying _template.md and filling id/name/date."""
 from __future__ import annotations
+
 import argparse
 import re
 import sys
@@ -7,7 +8,6 @@ from datetime import date
 from pathlib import Path
 
 from adr_lib import enumerate_adrs
-
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _ADR_FILENAME_RE = re.compile(r"^(?P<id>\d{6})-[a-z0-9-]+\.md$")

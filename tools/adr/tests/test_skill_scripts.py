@@ -1,12 +1,10 @@
 """Tests for skill helper scripts."""
 from __future__ import annotations
+
 import json
 import subprocess
 import sys
 from pathlib import Path
-
-import pytest
-
 
 REPO_TOOLS = Path(__file__).resolve().parents[1]
 
@@ -126,9 +124,9 @@ class TestTagUsage:
         assert result.returncode == 0
         lines = result.stdout.strip().splitlines()
         assert "documentation\t" in lines or "documentation\t\n" in result.stdout
-        meta_line = next(l for l in lines if l.startswith("meta\t"))
+        meta_line = next(line for line in lines if line.startswith("meta\t"))
         assert "000001" in meta_line and "000002" in meta_line
-        process_line = next(l for l in lines if l.startswith("process\t"))
+        process_line = next(line for line in lines if line.startswith("process\t"))
         assert process_line == "process\t000001"
 
 
@@ -177,7 +175,7 @@ class TestAddTag:
         )
         assert result.returncode == 0, result.stderr
         text = (adr_dir / "_tags.md").read_text()
-        lines = [l for l in text.splitlines() if l.startswith("- **")]
+        lines = [line for line in text.splitlines() if line.startswith("- **")]
         # ci sorts between documentation and meta? alpha order: ci, documentation, meta, process
         assert lines == [
             "- **ci** — Decisions about CI pipelines.",

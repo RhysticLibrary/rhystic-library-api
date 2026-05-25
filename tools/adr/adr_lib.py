@@ -1,11 +1,11 @@
 """Shared helpers for ADR scripts."""
 from __future__ import annotations
+
 import re
 from pathlib import Path
 from typing import Any
 
 import yaml
-
 
 _FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 _ADR_FILENAME_RE = re.compile(r"^(\d{6})-[a-z0-9-]+\.md$")

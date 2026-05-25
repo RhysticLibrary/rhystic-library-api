@@ -1,11 +1,11 @@
 """ADR validator. Returns a list of error messages; empty list means valid."""
 from __future__ import annotations
+
 import re
 from datetime import date
 from pathlib import Path
 
-from adr_lib import enumerate_adrs, parse_frontmatter, parse_tags_file, parse_header_table
-
+from adr_lib import enumerate_adrs, parse_frontmatter, parse_header_table, parse_tags_file
 
 _FILENAME_RE = re.compile(r"^(?P<id>\d{6})-(?P<slug>[a-z0-9-]+)\.md$")
 _FRONTMATTER_BLOCK_RE = re.compile(r"\A---\r?\n.*?\r?\n---\r?\n", re.DOTALL)
@@ -118,9 +118,9 @@ def _is_iso_date(value: object) -> bool:
         return False
     try:
         date.fromisoformat(value)
-        return True
     except ValueError:
         return False
+    return True
 
 
 def _check_frontmatter_schema(paths: list[Path]) -> list[str]:
@@ -207,7 +207,8 @@ def _check_merge_gate(paths: list[Path]) -> list[str]:
                 errors.append(f"{path.name}: status {status!r} requires date-invalidated to be a valid date")
             elif _is_iso_date(date_accepted) and date_invalidated < date_accepted:
                 errors.append(
-                    f"{path.name}: date-invalidated ({date_invalidated}) must be on or after date-accepted ({date_accepted})"
+                    f"{path.name}: date-invalidated ({date_invalidated}) "
+                    f"must be on or after date-accepted ({date_accepted})"
                 )
         if status in {"Proposed", "Accepted"} and date_invalidated:
             errors.append(f"{path.name}: status {status!r} requires date-invalidated to be empty")

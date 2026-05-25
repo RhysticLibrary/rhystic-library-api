@@ -1,8 +1,5 @@
 """Tests for the ADR validator."""
 from __future__ import annotations
-from pathlib import Path
-
-import pytest
 
 from validate import validate_repo
 
@@ -68,8 +65,17 @@ class TestFrontmatterSchemaCheck:
         adr_dir = adr_repo / "docs" / "adr"
         fm_text = fm_factory(name="foo")
         # Strip the description line.
-        fm_text = "\n".join(l for l in fm_text.splitlines() if not l.startswith("description:")) + "\n"
-        body = fm_text + "\n# ADR 000001: Foo\n\n" + table_factory() + "\n## Context and Problem Statement\nx\n## Considered Options\nx\n## Decision Outcome\nx\n## Consequences\nx\n"
+        fm_text = (
+            "\n".join(line for line in fm_text.splitlines() if not line.startswith("description:"))
+            + "\n"
+        )
+        sections = (
+            "\n## Context and Problem Statement\nx\n"
+            "## Considered Options\nx\n"
+            "## Decision Outcome\nx\n"
+            "## Consequences\nx\n"
+        )
+        body = fm_text + "\n# ADR 000001: Foo\n\n" + table_factory() + sections
         (adr_dir / "000001-foo.md").write_text(body)
         errors = validate_repo(adr_dir)
         assert any("description" in e.lower() and "missing" in e.lower() for e in errors)
@@ -177,7 +183,13 @@ class TestBodyStructureCheck:
             "| Superseded By | —                    |\n"
             "| Tags          | meta                 |\n"
         )
-        body = fm + "\n# ADR 000001: Foo\n\n" + partial_table + "\n## Context and Problem Statement\nx\n## Considered Options\nx\n## Decision Outcome\nx\n## Consequences\nx\n"
+        sections = (
+            "\n## Context and Problem Statement\nx\n"
+            "## Considered Options\nx\n"
+            "## Decision Outcome\nx\n"
+            "## Consequences\nx\n"
+        )
+        body = fm + "\n# ADR 000001: Foo\n\n" + partial_table + sections
         (adr_dir / "000001-foo.md").write_text(body)
         errors = validate_repo(adr_dir)
         assert any("Authors" in e for e in errors)
