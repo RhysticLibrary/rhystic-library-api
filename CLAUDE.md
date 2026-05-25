@@ -12,24 +12,3 @@ Project-level guidance for Claude working in this repository.
   - `.claude/skills/creating-an-adr/` — when authoring a new ADR (scaffolds, validates, walks the merge flow).
 
 Each skill ships helper scripts under `tools/adr/` that parse only frontmatter — prefer them over reading whole files when the question can be answered from metadata.
-
-## Python tooling
-
-- Python 3.10+ required; CI uses 3.12.
-- Dev deps in `requirements-dev.txt`: pytest, pytest-cov, pyyaml, ruff, pre-commit.
-- Tests: `pytest --cov=tools/adr` (coverage floor in `pyproject.toml` is 92%).
-- Lint: `ruff check tools/adr`. Format: `ruff format tools/adr` (or `--check` for CI-style).
-- Validator: `python tools/adr/validate.py` (add `--merge-gate` to mirror CI).
-- Pre-commit hooks run ruff, markdownlint, file hygiene, and the ADR validator
-  on every commit. Activate once with `pre-commit install`. Don't bypass with
-  `--no-verify`; if a hook fails, fix the underlying issue.
-
-## CI checks (must all pass to merge)
-
-- `markdown-lint` — markdownlint over `**/*.md` (excluding `docs/superpowers/**`).
-- `lint-python` — `ruff check` + `ruff format --check`.
-- `tests` — `pytest --cov=tools/adr --cov-fail-under=92`.
-- `adr-validate` — `python tools/adr/validate.py --merge-gate`.
-- `gitleaks` — secret scan.
-
-Dependabot opens weekly PRs for Python and GitHub Actions updates.
