@@ -18,6 +18,7 @@ Requires **Python 3.10+** (CI uses 3.12). Set up the dev environment:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip   # avoids stale-pip warnings
 pip install -r requirements-dev.txt
 pre-commit install   # one-time: enables format + lint + ADR validation on every commit
 ```
