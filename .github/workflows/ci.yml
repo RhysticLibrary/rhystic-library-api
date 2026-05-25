@@ -22,7 +22,9 @@ jobs:
         with:
           node-version: "20"
       - name: Run markdownlint
-        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#docs/superpowers/**"
+        # Pin matches .pre-commit-config.yaml so local and CI catch the same rules.
+        # Bump both when upgrading.
+        run: npx --yes markdownlint-cli2@0.22.1 "**/*.md" "#node_modules" "#docs/superpowers/**"
 
   lint-python:
     runs-on: ubuntu-latest

@@ -98,11 +98,11 @@ pre-commit run --all-files
 CI runs on every pull request and every push to `main`. All jobs must pass to merge.
 
 | Job | What it does |
-|---|---|
+| --- | --- |
 | `markdown-lint` | `markdownlint-cli2` over `**/*.md` (excludes `docs/superpowers/**`) |
-| `lint-python`   | `ruff check` + `ruff format --check` against `tools/adr` |
-| `python-tests`  | `pytest --cov=tools/adr` (coverage floor: 92%) |
-| `adr-validate`  | `python tools/adr/validate.py --merge-gate` |
-| `gitleaks`      | Secret scan |
+| `lint-python` | `ruff check` + `ruff format --check` against `tools/adr` |
+| `python-tests` | `pytest --cov=tools/adr` (coverage floor: 92%) |
+| `adr-validate` | `python tools/adr/validate.py --merge-gate` |
+| `gitleaks` | Secret scan |
 
 Dependabot opens weekly PRs for Python (`pip`) and GitHub Actions updates.
