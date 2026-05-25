@@ -85,3 +85,19 @@ class TestFindAdrs:
         )
         # 000002 has tag meta but status Deprecated; AND eliminates it.
         assert "000002" not in result.stdout
+
+
+class TestShowAdr:
+    def test_prints_frontmatter_as_json(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo"}))
+        result = run_script("show_adr.py", "000001", "--adr-dir", "docs/adr", cwd=adr_repo)
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["id"] == "000001"
+        assert data["name"] == "foo"
+        assert data["status"] == "Accepted"
+
+    def test_unknown_id_exits_nonzero(self, adr_repo):
+        result = run_script("show_adr.py", "999999", "--adr-dir", "docs/adr", cwd=adr_repo)
+        assert result.returncode != 0
