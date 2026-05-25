@@ -178,3 +178,52 @@ class TestBodyStructureCheck:
         (adr_dir / "000001-foo.md").write_text(crlf)
         errors = validate_repo(adr_dir)
         assert [e for e in errors if "h1" in e.lower() or "header table" in e.lower()] == []
+
+
+class TestFrontmatterTableConsistency:
+    def test_fails_when_status_differs(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory(
+            {"name": "foo", "status": "Accepted"},
+            table_overrides={"Status": "Proposed"},
+        ))
+        errors = validate_repo(adr_dir)
+        assert any("Status" in e and "frontmatter" in e.lower() for e in errors)
+
+    def test_fails_when_date_proposed_differs(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory(
+            {"name": "foo", "date-proposed": '"2026-05-24"'},
+            table_overrides={"Date Proposed": "2026-05-25"},
+        ))
+        errors = validate_repo(adr_dir)
+        assert any("Date Proposed" in e for e in errors)
+
+    def test_empty_date_pairs_with_emdash(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        # Both empty ↔ em-dash: valid pairing.
+        (adr_dir / "000001-foo.md").write_text(adr_factory(
+            {"name": "foo", "date-invalidated": '""'},
+            table_overrides={"Date Invalidated": "—"},
+        ))
+        errors = validate_repo(adr_dir)
+        assert [e for e in errors if "Date Invalidated" in e] == []
+
+    def test_fails_when_tags_differ(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory(
+            {"name": "foo", "tags": "[meta, process]"},
+            table_overrides={"Tags": "meta"},
+        ))
+        errors = validate_repo(adr_dir)
+        assert any("Tags" in e for e in errors)
+
+    def test_fails_when_supersedes_differs(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"id": '"000001"', "name": "foo"}))
+        (adr_dir / "000002-bar.md").write_text(adr_factory(
+            {"id": '"000002"', "name": "bar", "supersedes": '["000001"]'},
+            table_overrides={"Supersedes": "—"},
+        ))
+        errors = validate_repo(adr_dir)
+        assert any("Supersedes" in e for e in errors)

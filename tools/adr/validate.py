@@ -32,6 +32,60 @@ def _body_after_frontmatter(text: str) -> str:
     return text[match.end():] if match else text
 
 
+def _normalize_list(value: object) -> str:
+    """Normalize a list-valued frontmatter field to its table representation."""
+    if not value:
+        return "—"
+    if isinstance(value, list):
+        return ", ".join(str(v) for v in value)
+    return str(value)
+
+
+def _normalize_table_list(value: str) -> str:
+    return value.strip()
+
+
+def _check_consistency(paths: list[Path]) -> list[str]:
+    errors: list[str] = []
+    for path in paths:
+        text = path.read_text()
+        try:
+            fm = parse_frontmatter(text)
+            table = parse_header_table(_body_after_frontmatter(text))
+        except ValueError:
+            continue
+
+        pairs: list[tuple[str, object, str]] = [
+            ("Status", fm.get("status"), "Status"),
+            ("Date Proposed", fm.get("date-proposed"), "Date Proposed"),
+            ("Date Accepted", fm.get("date-accepted"), "Date Accepted"),
+            ("Date Invalidated", fm.get("date-invalidated"), "Date Invalidated"),
+            ("Tags", fm.get("tags"), "Tags"),
+            ("Supersedes", fm.get("supersedes"), "Supersedes"),
+            ("Superseded By", fm.get("superseded-by"), "Superseded By"),
+        ]
+        for label, fm_value, table_key in pairs:
+            table_value = table.get(table_key, "").strip()
+            if label in ("Date Accepted", "Date Invalidated"):
+                expected_table = fm_value if fm_value else "—"
+                if expected_table != table_value:
+                    errors.append(
+                        f"{path.name}: {label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}"
+                    )
+            elif label in ("Tags", "Supersedes", "Superseded By"):
+                expected_table = _normalize_list(fm_value)
+                if expected_table != table_value:
+                    errors.append(
+                        f"{path.name}: {label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}"
+                    )
+            else:
+                if str(fm_value) != table_value:
+                    errors.append(
+                        f"{path.name}: {label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}"
+                    )
+    return errors
+
+
 def _check_body_structure(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -144,6 +198,7 @@ def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
     errors.extend(_check_frontmatter_schema(paths))
     errors.extend(_check_tag_membership(adr_dir, paths))
     errors.extend(_check_body_structure(paths))
+    errors.extend(_check_consistency(paths))
     return errors
 
 
