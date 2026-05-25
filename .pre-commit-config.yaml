@@ -1,0 +1,40 @@
+# Run `pre-commit install` once per dev environment to activate.
+# See https://pre-commit.com/
+
+# Globally skip agent working docs (mirrors the CI markdownlint exclusion).
+exclude: ^docs/superpowers/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.14
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.22.1
+    hooks:
+      - id: markdownlint-cli2
+
+  - repo: local
+    hooks:
+      - id: adr-validate
+        name: ADR validator (no merge gate)
+        entry: python tools/adr/validate.py
+        language: python
+        pass_filenames: false
+        files: ^docs/adr/
+        additional_dependencies: ["pyyaml>=6.0"]

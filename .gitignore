@@ -57,3 +57,13 @@ application-local.*
 
 # === Claude Code ===
 .claude/settings.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.coverage
+.coverage.*
+htmlcov/
+.ruff_cache/
