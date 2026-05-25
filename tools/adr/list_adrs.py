@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 
 from adr_lib import enumerate_adrs, parse_frontmatter
+from cli_format import summary_line
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -14,11 +15,10 @@ def main(argv: list[str] | None = None) -> int:
     for path in enumerate_adrs(args.adr_dir):
         try:
             fm = parse_frontmatter(path.read_text())
-        except ValueError:
+        except (ValueError, TypeError):
             print(f"{path.name}\tINVALID\t[]\t<unparseable>")
             continue
-        tags = ",".join(fm.get("tags", []) or [])
-        print(f"{fm.get('id', '------')}\t{fm.get('status', '?')}\t[{tags}]\t{fm.get('description', '')}")
+        print(summary_line(fm))
     return 0
 
 

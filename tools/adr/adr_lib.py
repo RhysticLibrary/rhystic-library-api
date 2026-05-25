@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 _FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
-_ADR_FILENAME_RE = re.compile(r"^(\d{6})-[a-z0-9-]+\.md$")
+# Public: consumers (validator, new_adr) match candidate ADR filenames against this.
+ADR_FILENAME_RE = re.compile(r"^(?P<id>\d{6})-(?P<slug>[a-z0-9-]+)\.md$")
 # Intentionally accepts em-dash (U+2014), en-dash (U+2013), and hyphen (U+002D) so
 # editors that auto-convert dashes don't silently drop tag entries from _tags.md.
 _TAG_LINE_RE = re.compile(r"^-\s*\*\*(?P<tag>[a-z0-9-]+)\*\*\s*[—–-]\s*(?P<desc>.+?)\s*$")  # noqa: RUF001
@@ -46,6 +48,20 @@ def enumerate_adrs(adr_dir: Path) -> list[Path]:
         if path.is_file() and path.suffix == ".md" and not path.name.startswith("_")
     ]
     return sorted(matches, key=lambda p: p.name)
+
+
+def iter_frontmatters(paths: Iterable[Path]) -> Iterator[tuple[Path, dict[str, Any]]]:
+    """Yield ``(path, frontmatter_dict)`` for each parseable file.
+
+    Silently skips files whose frontmatter is missing, malformed, or non-mapping.
+    The numbering check is responsible for surfacing those structural defects;
+    other checks only care about ADRs whose frontmatter is at least readable.
+    """
+    for path in paths:
+        try:
+            yield path, parse_frontmatter(path.read_text())
+        except (ValueError, TypeError):
+            continue
 
 
 def parse_tags_file(tags_path: Path) -> dict[str, str]:

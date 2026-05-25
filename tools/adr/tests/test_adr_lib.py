@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import pytest
 from adr_lib import (
+    ADR_FILENAME_RE,
     enumerate_adrs,
+    iter_frontmatters,
     parse_frontmatter,
     parse_header_table,
     parse_tags_file,
@@ -82,6 +84,41 @@ class TestEnumerateAdrs:
             "12345-too-short.md",
             "draft.md",
         ]
+
+
+class TestIterFrontmatters:
+    def test_yields_path_and_frontmatter_pairs(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-first.md").write_text(adr_factory({"id": '"000001"', "name": "first"}))
+        (adr_dir / "000002-second.md").write_text(adr_factory({"id": '"000002"', "name": "second"}))
+        paths = enumerate_adrs(adr_dir)
+        result = list(iter_frontmatters(paths))
+        assert [p.name for p, _fm in result] == ["000001-first.md", "000002-second.md"]
+        assert [fm["name"] for _p, fm in result] == ["first", "second"]
+
+    def test_skips_unparseable_files_silently(self, adr_repo, adr_factory):
+        # iter_frontmatters absorbs ValueError (missing/malformed frontmatter)
+        # AND TypeError (non-mapping YAML) so downstream checks don't crash.
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-good.md").write_text(adr_factory({"name": "good"}))
+        (adr_dir / "000002-noframe.md").write_text("# Just a heading, no frontmatter")
+        (adr_dir / "000003-listframe.md").write_text("---\n- not a mapping\n---\n# x")
+        paths = enumerate_adrs(adr_dir)
+        result = list(iter_frontmatters(paths))
+        assert [p.name for p, _fm in result] == ["000001-good.md"]
+
+
+class TestAdrFilenameRegex:
+    def test_matches_valid_names(self):
+        match = ADR_FILENAME_RE.match("000042-some-kebab-slug.md")
+        assert match is not None
+        assert match.group("id") == "000042"
+        assert match.group("slug") == "some-kebab-slug"
+
+    def test_rejects_invalid_names(self):
+        assert ADR_FILENAME_RE.match("draft.md") is None
+        assert ADR_FILENAME_RE.match("12345-too-short.md") is None
+        assert ADR_FILENAME_RE.match("000001-Has-Capitals.md") is None
 
 
 class TestParseTagsFile:

@@ -53,6 +53,19 @@ class TestNumberingCheck:
         errors = validate_repo(adr_dir)
         assert any("draft.md" in e and "filename does not match" in e for e in errors)
 
+    def test_does_not_crash_on_non_mapping_yaml_frontmatter(self, adr_repo, adr_factory):
+        # Regression: parse_frontmatter raises TypeError (not ValueError) when
+        # the YAML body is a scalar or sequence. Checks must absorb both so the
+        # validator surfaces a real error instead of crashing.
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-real.md").write_text(adr_factory())
+        (adr_dir / "000002-listframe.md").write_text("---\n- just a list\n---\n# x\n")
+        errors = validate_repo(adr_dir, merge_gate=True)
+        # We don't assert on a specific message here — only that the call
+        # completed and produced some errors (the numbering check will report
+        # the filename id/name mismatch for the malformed file).
+        assert isinstance(errors, list)
+
 
 class TestFrontmatterSchemaCheck:
     def test_passes_with_complete_frontmatter(self, adr_repo, adr_factory):

@@ -7,10 +7,9 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from adr_lib import enumerate_adrs
+from adr_lib import ADR_FILENAME_RE, enumerate_adrs
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
-_ADR_FILENAME_RE = re.compile(r"^(?P<id>\d{6})-[a-z0-9-]+\.md$")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -34,7 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     valid_ids = [
         int(m.group("id"))
         for path in enumerate_adrs(args.adr_dir)
-        if (m := _ADR_FILENAME_RE.match(path.name))
+        if (m := ADR_FILENAME_RE.match(path.name))
     ]
     next_id = max(valid_ids, default=0) + 1
     new_id = f"{next_id:06d}"

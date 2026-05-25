@@ -3,8 +3,28 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
-from adr_lib import enumerate_adrs, parse_frontmatter
+from adr_lib import enumerate_adrs, iter_frontmatters
+from cli_format import summary_line
+
+
+def _matches(
+    fm: dict[str, Any],
+    *,
+    tag: str | None,
+    status: str | None,
+    search: str | None,
+) -> bool:
+    if tag and tag not in (fm.get("tags") or []):
+        return False
+    if status and fm.get("status") != status:
+        return False
+    if search:
+        haystack = f"{fm.get('name', '')} {fm.get('description', '')}".lower()
+        if search.lower() not in haystack:
+            return False
+    return True
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -15,22 +35,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--search", help="Substring match against name and description.")
     args = parser.parse_args(argv)
 
-    for path in enumerate_adrs(args.adr_dir):
-        try:
-            fm = parse_frontmatter(path.read_text())
-        except ValueError:
-            continue
-        if args.tag and args.tag not in (fm.get("tags") or []):
-            continue
-        if args.status and fm.get("status") != args.status:
-            continue
-        if args.search:
-            needle = args.search.lower()
-            hay = f"{fm.get('name', '')} {fm.get('description', '')}".lower()
-            if needle not in hay:
-                continue
-        tags = ",".join(fm.get("tags", []) or [])
-        print(f"{fm.get('id', '------')}\t{fm.get('status', '?')}\t[{tags}]\t{fm.get('description', '')}")
+    for _path, fm in iter_frontmatters(enumerate_adrs(args.adr_dir)):
+        if _matches(fm, tag=args.tag, status=args.status, search=args.search):
+            print(summary_line(fm))
     return 0
 
 
