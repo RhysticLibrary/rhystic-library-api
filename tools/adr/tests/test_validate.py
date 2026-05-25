@@ -26,7 +26,7 @@ class TestNumberingCheck:
         errors = validate_repo(adr_dir)
         assert any("gap" in e.lower() and "000002" in e for e in errors)
 
-    def test_fails_on_duplicate_id(self, adr_repo, adr_factory, tmp_path):
+    def test_fails_on_duplicate_id(self, adr_repo, adr_factory):
         adr_dir = adr_repo / "docs" / "adr"
         (adr_dir / "000001-first.md").write_text(adr_factory({"id": '"000001"', "name": "first"}))
         (adr_dir / "000001-other.md").write_text(adr_factory({"id": '"000001"', "name": "other"}))
@@ -45,6 +45,16 @@ class TestNumberingCheck:
         (adr_dir / "000001-first.md").write_text(adr_factory({"id": '"000001"', "name": "different"}))
         errors = validate_repo(adr_dir)
         assert any("slug" in e.lower() or "name" in e.lower() for e in errors)
+
+    def test_fails_on_stray_non_adr_markdown_in_dir(self, adr_repo, adr_factory):
+        # A user drops draft.md into docs/adr/ — validator must flag it, not
+        # silently skip. Regression test for codex P1 finding (enumerate_adrs
+        # used to drop non-matching filenames, hiding them from every check).
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-real.md").write_text(adr_factory())
+        (adr_dir / "draft.md").write_text("not an ADR\n")
+        errors = validate_repo(adr_dir)
+        assert any("draft.md" in e and "filename does not match" in e for e in errors)
 
 
 class TestFrontmatterSchemaCheck:
@@ -152,7 +162,7 @@ class TestBodyStructureCheck:
         errors = validate_repo(adr_dir)
         assert any("Authors" in e for e in errors)
 
-    def test_fails_when_table_missing_a_field(self, adr_repo, adr_factory, fm_factory):
+    def test_fails_when_table_missing_a_field(self, adr_repo, fm_factory):
         adr_dir = adr_repo / "docs" / "adr"
         # Build a body whose table is missing the Authors row entirely.
         fm = fm_factory(name="foo")

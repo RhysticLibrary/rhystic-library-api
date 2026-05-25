@@ -37,6 +37,12 @@ class TestParseFrontmatter:
         with pytest.raises(ValueError, match="malformed"):
             parse_frontmatter(text)
 
+    def test_non_mapping_yaml_raises_typeerror(self):
+        # A YAML scalar or sequence at the top is a type error, not a value error.
+        text = "---\n- just a list\n---\n"
+        with pytest.raises(TypeError, match="mapping"):
+            parse_frontmatter(text)
+
     def test_accepts_crlf_line_endings(self, fm_factory):
         crlf_text = fm_factory().replace("\n", "\r\n")
         fm = parse_frontmatter(crlf_text)
@@ -63,13 +69,20 @@ class TestEnumerateAdrs:
         result = enumerate_adrs(adr_dir)
         assert [p.name for p in result] == ["000001-real.md"]
 
-    def test_skips_non_matching_files(self, adr_repo, adr_factory):
+    def test_returns_non_matching_files_for_validator_to_flag(self, adr_repo, adr_factory):
+        # Non-conforming .md files must NOT be silently dropped — the validator
+        # is responsible for reporting them. Dropping them here would let a
+        # stray draft.md bypass every downstream check.
         adr_dir = adr_repo / "docs" / "adr"
         (adr_dir / "000001-real.md").write_text(adr_factory())
         (adr_dir / "draft.md").write_text("not an adr")
         (adr_dir / "12345-too-short.md").write_text("not an adr")
         result = enumerate_adrs(adr_dir)
-        assert [p.name for p in result] == ["000001-real.md"]
+        assert [p.name for p in result] == [
+            "000001-real.md",
+            "12345-too-short.md",
+            "draft.md",
+        ]
 
 
 class TestParseTagsFile:

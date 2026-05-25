@@ -9,7 +9,9 @@ import yaml
 
 _FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 _ADR_FILENAME_RE = re.compile(r"^(\d{6})-[a-z0-9-]+\.md$")
-_TAG_LINE_RE = re.compile(r"^-\s*\*\*(?P<tag>[a-z0-9-]+)\*\*\s*[—–-]\s*(?P<desc>.+?)\s*$")
+# Intentionally accepts em-dash (U+2014), en-dash (U+2013), and hyphen (U+002D) so
+# editors that auto-convert dashes don't silently drop tag entries from _tags.md.
+_TAG_LINE_RE = re.compile(r"^-\s*\*\*(?P<tag>[a-z0-9-]+)\*\*\s*[—–-]\s*(?P<desc>.+?)\s*$")  # noqa: RUF001
 _TABLE_ROW_RE = re.compile(r"^\|\s*(?P<key>[^|]+?)\s*\|\s*(?P<value>[^|]+?)\s*\|\s*$")
 
 
@@ -23,20 +25,26 @@ def parse_frontmatter(text: str) -> dict[str, Any]:
     except yaml.YAMLError as exc:
         raise ValueError(f"malformed YAML frontmatter: {exc}") from exc
     if not isinstance(data, dict):
-        raise ValueError("frontmatter must be a YAML mapping")
+        raise TypeError("frontmatter must be a YAML mapping")
     return data
 
 
 def enumerate_adrs(adr_dir: Path) -> list[Path]:
-    """Return ADR file paths sorted by 6-digit ID."""
+    """Return candidate ADR markdown file paths, sorted by filename.
+
+    Skips underscore-prefixed companion files (`_template.md`, `_tags.md`) but
+    returns every other `*.md` file regardless of whether the name matches the
+    `NNNNNN-kebab-slug.md` pattern. Reporting malformed filenames is the
+    validator's job (see ``_check_numbering`` in ``validate.py``); silently
+    dropping them here would let a stray ``docs/adr/draft.md`` bypass every
+    schema/body/merge-gate check while CI still passed.
+    """
     if not adr_dir.is_dir():
         return []
-    matches = []
-    for path in adr_dir.iterdir():
-        if path.name.startswith("_"):
-            continue
-        if _ADR_FILENAME_RE.match(path.name):
-            matches.append(path)
+    matches = [
+        path for path in adr_dir.iterdir()
+        if path.is_file() and path.suffix == ".md" and not path.name.startswith("_")
+    ]
     return sorted(matches, key=lambda p: p.name)
 
 

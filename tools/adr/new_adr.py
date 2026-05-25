@@ -6,10 +6,11 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from adr_lib import enumerate_adrs, parse_frontmatter
+from adr_lib import enumerate_adrs
 
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+_ADR_FILENAME_RE = re.compile(r"^(?P<id>\d{6})-[a-z0-9-]+\.md$")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -27,11 +28,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: template missing at {template_path}", file=sys.stderr)
         return 2
 
-    existing = enumerate_adrs(args.adr_dir)
-    next_id = 1
-    if existing:
-        last_fm = parse_frontmatter(existing[-1].read_text())
-        next_id = int(str(last_fm["id"])) + 1
+    # Compute next ID from filenames only — never trust frontmatter for this.
+    # A stray draft.md or a malformed prior ADR shouldn't crash the scaffold or
+    # produce a wrong next-ID.
+    valid_ids = [
+        int(m.group("id"))
+        for path in enumerate_adrs(args.adr_dir)
+        if (m := _ADR_FILENAME_RE.match(path.name))
+    ]
+    next_id = max(valid_ids, default=0) + 1
     new_id = f"{next_id:06d}"
 
     today = date.today().isoformat()
