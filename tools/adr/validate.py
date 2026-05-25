@@ -191,6 +191,36 @@ def _check_tag_membership(adr_dir: Path, paths: list[Path]) -> list[str]:
     return errors
 
 
+def _check_merge_gate(paths: list[Path]) -> list[str]:
+    errors: list[str] = []
+    for path in paths:
+        try:
+            fm = parse_frontmatter(path.read_text())
+        except ValueError:
+            continue
+        status = fm.get("status")
+        date_accepted = fm.get("date-accepted") or ""
+        date_invalidated = fm.get("date-invalidated") or ""
+        superseded_by = fm.get("superseded-by") or []
+
+        if status == "Proposed":
+            errors.append(f"{path.name}: merge gate — status 'Proposed' blocks merge")
+        if status in {"Accepted", "Deprecated", "Superseded"} and not _is_iso_date(date_accepted):
+            errors.append(f"{path.name}: status {status!r} requires date-accepted to be a valid date")
+        if status in {"Deprecated", "Superseded"}:
+            if not _is_iso_date(date_invalidated):
+                errors.append(f"{path.name}: status {status!r} requires date-invalidated to be a valid date")
+            elif _is_iso_date(date_accepted) and date_invalidated < date_accepted:
+                errors.append(
+                    f"{path.name}: date-invalidated ({date_invalidated}) must be on or after date-accepted ({date_accepted})"
+                )
+        if status in {"Proposed", "Accepted"} and date_invalidated:
+            errors.append(f"{path.name}: status {status!r} requires date-invalidated to be empty")
+        if status == "Superseded" and not superseded_by:
+            errors.append(f"{path.name}: status 'Superseded' requires non-empty superseded-by")
+    return errors
+
+
 def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
     errors: list[str] = []
     paths = enumerate_adrs(adr_dir)
@@ -199,6 +229,8 @@ def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
     errors.extend(_check_tag_membership(adr_dir, paths))
     errors.extend(_check_body_structure(paths))
     errors.extend(_check_consistency(paths))
+    if merge_gate:
+        errors.extend(_check_merge_gate(paths))
     return errors
 
 
