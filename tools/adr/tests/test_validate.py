@@ -116,3 +116,58 @@ class TestTagMembershipCheck:
         (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo"}))
         errors = validate_repo(adr_dir)
         assert any("_tags.md" in e for e in errors)
+
+
+class TestBodyStructureCheck:
+    def test_passes_with_complete_body(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo"}))
+        errors = validate_repo(adr_dir)
+        assert [e for e in errors if "h1" in e.lower() or "section" in e.lower() or "table" in e.lower()] == []
+
+    def test_fails_on_missing_h1(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        adr = adr_factory({"name": "foo"}, title="## Not an H1")
+        (adr_dir / "000001-foo.md").write_text(adr)
+        errors = validate_repo(adr_dir)
+        assert any("h1" in e.lower() for e in errors)
+
+    def test_fails_when_required_section_missing(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        sections = [
+            "## Context and Problem Statement\nx",
+            "## Considered Options\nx",
+            # Decision Outcome missing
+            "## Consequences\nx",
+        ]
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo"}, sections=sections))
+        errors = validate_repo(adr_dir)
+        assert any("Decision Outcome" in e for e in errors)
+
+    def test_fails_when_authors_empty(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory(
+            {"name": "foo"}, table_overrides={"Authors": "—"},
+        ))
+        errors = validate_repo(adr_dir)
+        assert any("Authors" in e for e in errors)
+
+    def test_fails_when_table_missing_a_field(self, adr_repo, adr_factory, fm_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        # Build a body whose table is missing the Authors row entirely.
+        fm = fm_factory(name="foo")
+        partial_table = (
+            "| Field         | Value                |\n"
+            "|---------------|----------------------|\n"
+            "| Status        | Accepted             |\n"
+            "| Date Proposed | 2026-05-24           |\n"
+            "| Date Accepted | 2026-05-24           |\n"
+            "| Date Invalidated | —                 |\n"
+            "| Supersedes    | —                    |\n"
+            "| Superseded By | —                    |\n"
+            "| Tags          | meta                 |\n"
+        )
+        body = fm + "\n# ADR 000001: Foo\n\n" + partial_table + "\n## Context and Problem Statement\nx\n## Considered Options\nx\n## Decision Outcome\nx\n## Consequences\nx\n"
+        (adr_dir / "000001-foo.md").write_text(body)
+        errors = validate_repo(adr_dir)
+        assert any("Authors" in e for e in errors)

@@ -4,16 +4,64 @@ import re
 from datetime import date
 from pathlib import Path
 
-from adr_lib import enumerate_adrs, parse_frontmatter, parse_tags_file
+from adr_lib import enumerate_adrs, parse_frontmatter, parse_tags_file, parse_header_table
 
 
 _FILENAME_RE = re.compile(r"^(?P<id>\d{6})-(?P<slug>[a-z0-9-]+)\.md$")
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
 _ALLOWED_STATUSES = {"Proposed", "Accepted", "Deprecated", "Superseded"}
 _REQUIRED_FIELDS = [
     "id", "name", "description", "status",
     "date-proposed", "date-accepted", "date-invalidated",
     "supersedes", "superseded-by", "tags",
 ]
+_REQUIRED_SECTIONS = [
+    "Context and Problem Statement",
+    "Considered Options",
+    "Decision Outcome",
+    "Consequences",
+]
+_REQUIRED_TABLE_FIELDS = [
+    "Status", "Date Proposed", "Date Accepted", "Date Invalidated",
+    "Authors", "Supersedes", "Superseded By", "Tags",
+]
+
+
+def _body_after_frontmatter(text: str) -> str:
+    match = _FRONTMATTER_BLOCK_RE.match(text)
+    return text[match.end():] if match else text
+
+
+def _check_body_structure(paths: list[Path]) -> list[str]:
+    errors: list[str] = []
+    for path in paths:
+        text = path.read_text()
+        body = _body_after_frontmatter(text).lstrip("\n")
+
+        # H1 check
+        first_meaningful = next((l for l in body.splitlines() if l.strip()), "")
+        if not first_meaningful.startswith("# "):
+            errors.append(f"{path.name}: expected H1 immediately after frontmatter")
+            continue
+
+        # Header table presence + fields
+        try:
+            table = parse_header_table(body)
+        except ValueError as exc:
+            errors.append(f"{path.name}: {exc}")
+            continue
+        for field in _REQUIRED_TABLE_FIELDS:
+            if field not in table:
+                errors.append(f"{path.name}: header table missing row '{field}'")
+        if table.get("Authors", "").strip() in ("", "—"):
+            errors.append(f"{path.name}: Authors must be non-empty")
+
+        # Required level-2 sections
+        for section in _REQUIRED_SECTIONS:
+            pattern = re.compile(rf"^## {re.escape(section)}\s*$", re.MULTILINE)
+            if not pattern.search(body):
+                errors.append(f"{path.name}: missing required section '## {section}'")
+    return errors
 
 
 def _is_iso_date(value: object) -> bool:
@@ -95,6 +143,7 @@ def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
     errors.extend(_check_numbering(paths))
     errors.extend(_check_frontmatter_schema(paths))
     errors.extend(_check_tag_membership(adr_dir, paths))
+    errors.extend(_check_body_structure(paths))
     return errors
 
 
