@@ -6,5 +6,10 @@
   "MD029": false,        // ol-prefix: some list formatting requires flexibility
   "MD031": false,        // blanks-around-fences: code blocks in lists need flexibility
   "MD033": false,        // allow inline HTML (template uses <!-- ... -->)
-  "MD041": false         // first line can be frontmatter, not H1
+  "MD041": false,        // first line can be frontmatter, not H1
+  "ignores": [
+    // Agent working documents — not subject to project-wide style enforcement.
+    "docs/superpowers/specs/**",
+    "docs/superpowers/plans/**"
+  ]
 }

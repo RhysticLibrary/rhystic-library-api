@@ -5,21 +5,31 @@ on:
   push:
     branches: [main]
 
+# Cancel superseded runs on the same branch/PR so we don't burn CI minutes
+# on commits the user has already replaced.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   markdown-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
       - name: Run markdownlint
-        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules"
+        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#docs/superpowers/**"
 
   adr-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
