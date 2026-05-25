@@ -101,3 +101,13 @@ class TestShowAdr:
     def test_unknown_id_exits_nonzero(self, adr_repo):
         result = run_script("show_adr.py", "999999", "--adr-dir", "docs/adr", cwd=adr_repo)
         assert result.returncode != 0
+
+
+class TestListTags:
+    def test_prints_tags_in_order(self, adr_repo):
+        result = run_script("list_tags.py", "--adr-dir", "docs/adr", cwd=adr_repo)
+        assert result.returncode == 0
+        lines = result.stdout.strip().splitlines()
+        assert lines[0].startswith("documentation\t")
+        assert lines[1].startswith("meta\t")
+        assert lines[2].startswith("process\t")
