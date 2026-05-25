@@ -37,13 +37,30 @@ extend-exclude = [".venv", "docs/superpowers"]
 
 [tool.ruff.lint]
 # Pragmatic selection — pycodestyle + pyflakes baseline, plus categories that
-# caught real defects in past reviews (RUF, TRY, C4, ARG, B, UP) and import
-# sorting (I).
-select = ["E", "F", "W", "I", "B", "RUF", "TRY", "C4", "ARG", "UP"]
+# caught real defects in past reviews (RUF, TRY, C4, ARG, B, UP), import
+# sorting (I), and docstring presence (D).
+select = ["E", "F", "W", "I", "B", "RUF", "TRY", "C4", "ARG", "UP", "D"]
 ignore = [
     # Long messages outside the exception class are fine for our small CLI tools.
     "TRY003",
+    # Conflicting docstring style rules — pick one of each pair via the pep257
+    # convention preset.
+    "D203",  # 1 blank line before class docstring (conflicts with D211)
+    "D213",  # Multi-line docstring summary on second line (conflicts with D212)
+    # We're enforcing presence + basic structure; not enforcing prose mechanics.
+    "D205",  # 1 blank line required between summary and description
+    "D400",  # First line ends with a period (we sometimes don't)
+    "D401",  # First line in imperative mood
+    "D415",  # First line ends with punctuation
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests document themselves through descriptive names + inline comments;
+# enforcing module / class / function docstrings here is noise.
+"tools/adr/tests/**" = ["D"]
 
 [tool.ruff.format]
 # Defaults are sensible (double quotes, 88-char default; line-length above wins).

@@ -10,6 +10,11 @@ from cli_format import summary_line
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Print every ADR as a TSV row sorted by ID.
+
+    Files whose frontmatter is missing, malformed, or non-mapping are
+    surfaced as an ``INVALID`` row rather than silently skipped.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--adr-dir", type=Path, default=Path("docs/adr"))
     args = parser.parse_args(argv)

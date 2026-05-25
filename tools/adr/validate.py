@@ -171,7 +171,12 @@ def _check_date_fields(path: Path, fm: dict[str, Any]) -> list[str]:
         errors.append(f"{path.name}: date-proposed must be ISO-8601 (YYYY-MM-DD), got {fm.get('date-proposed')!r}")
     for date_field in ("date-accepted", "date-invalidated"):
         value = fm.get(date_field)
-        if value not in ("", None) and not _is_iso_date(value):
+        # Only the empty string and a valid ISO-8601 string are allowed.
+        # YAML `null` deserializes to Python None and is NOT acceptable —
+        # authors must explicitly use `""` to mean "not yet set".
+        if value == "":
+            continue
+        if not isinstance(value, str) or not _is_iso_date(value):
             errors.append(f"{path.name}: {date_field} must be ISO-8601 or empty, got {value!r}")
     return errors
 
@@ -255,10 +260,22 @@ def _check_header_table(path: Path, body: str) -> list[str]:
 
 def _check_required_sections(path: Path, body: str) -> list[str]:
     errors: list[str] = []
+    positions: dict[str, int] = {}
     for section in _REQUIRED_SECTIONS:
         pattern = re.compile(rf"^## {re.escape(section)}\s*$", re.MULTILINE)
-        if not pattern.search(body):
+        match = pattern.search(body)
+        if match is None:
             errors.append(f"{path.name}: missing required section '## {section}'")
+        else:
+            positions[section] = match.start()
+    # Order check only runs when every required section is present — otherwise
+    # a missing section would also trip the order check and double-report.
+    if len(positions) == len(_REQUIRED_SECTIONS):
+        observed_order = sorted(positions, key=lambda s: positions[s])
+        if observed_order != list(_REQUIRED_SECTIONS):
+            errors.append(
+                f"{path.name}: required sections must appear in order {list(_REQUIRED_SECTIONS)}, got {observed_order}"
+            )
     return errors
 
 
@@ -286,6 +303,36 @@ def _expected_table_value(fm_value: object, kind: str) -> str:
     return str(fm_value)
 
 
+def _table_list_to_set(value: str) -> set[str]:
+    """Parse a comma-separated table cell into a set of trimmed strings.
+
+    Empty cells (``""`` or ``"—"``) become the empty set so list ↔ em-dash
+    equivalence is preserved.
+    """
+    raw = value.strip()
+    if raw in ("", "—"):
+        return set()
+    return {part.strip() for part in raw.split(",") if part.strip()}
+
+
+def _frontmatter_list_to_set(value: object) -> set[str]:
+    if isinstance(value, list):
+        return {str(v).strip() for v in value if str(v).strip()}
+    return set()
+
+
+def _table_matches_frontmatter(fm_value: object, table_value: str, kind: str) -> bool:
+    """Whether a table cell value mirrors its frontmatter counterpart.
+
+    List-kind fields (``tags``, ``supersedes``, ``superseded-by``) compare as
+    unordered sets — the spec defines these as sets of slugs / IDs and order
+    in the rendered table is presentation, not data.
+    """
+    if kind == "list":
+        return _frontmatter_list_to_set(fm_value) == _table_list_to_set(table_value)
+    return _expected_table_value(fm_value, kind) == table_value
+
+
 def _check_consistency(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -298,8 +345,7 @@ def _check_consistency(paths: list[Path]) -> list[str]:
         for fm_field, table_label, kind in _CONSISTENCY_PAIRS:
             fm_value = fm.get(fm_field)
             table_value = table.get(table_label, "").strip()
-            expected = _expected_table_value(fm_value, kind)
-            if expected != table_value:
+            if not _table_matches_frontmatter(fm_value, table_value, kind):
                 errors.append(f"{path.name}: {table_label} mismatch — frontmatter {fm_value!r} ↔ table {table_value!r}")
     return errors
 
@@ -349,6 +395,12 @@ def _check_status_for_merge(path: Path, fm: dict[str, Any]) -> list[str]:
 
 
 def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
+    """Run every validator check against the ADR directory.
+
+    Returns a list of human-readable error messages; an empty list means
+    the ADR repository passes validation. Pass ``merge_gate=True`` to add
+    the status-invariant rules that block a Proposed ADR from merging.
+    """
     errors: list[str] = []
     paths = enumerate_adrs(adr_dir)
     errors.extend(_check_numbering(paths))
@@ -362,6 +414,7 @@ def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point. Prints each error to stdout, exits non-zero on failure."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Validate ADR repository.")

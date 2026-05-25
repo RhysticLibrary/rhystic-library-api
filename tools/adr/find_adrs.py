@@ -29,6 +29,7 @@ def _matches(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Print ADRs matching every supplied filter, one TSV row per ADR."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--adr-dir", type=Path, default=Path("docs/adr"))
     parser.add_argument("--tag", help="Restrict to ADRs containing this tag.")

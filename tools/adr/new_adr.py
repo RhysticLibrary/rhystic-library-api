@@ -14,6 +14,12 @@ _SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Scaffold a new ADR from ``_template.md`` and print the new file path.
+
+    Computes the next sequential ID from existing valid ADR filenames (a
+    stray ``draft.md`` or malformed prior ADR can't skew the count). Returns
+    2 on bad slug, missing template, or naming collision.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("slug", help="kebab-case slug for the new ADR")
     parser.add_argument("--adr-dir", type=Path, default=Path("docs/adr"))

@@ -113,6 +113,7 @@ class TestFindAdrs:
             "meta",
             cwd=adr_repo,
         )
+        assert result.returncode == 0, result.stderr
         # 000002 has tag meta but status Deprecated; AND eliminates it.
         assert "000002" not in result.stdout
 

@@ -11,6 +11,11 @@ from adr_lib import enumerate_adrs, parse_frontmatter
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Print the frontmatter of the ADR with the given 6-digit ID as JSON.
+
+    Returns 1 if no ADR matches the ID, 2 if the matched ADR's frontmatter
+    is unparseable.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("adr_id", help="6-digit ADR ID, e.g. 000001")
     parser.add_argument("--adr-dir", type=Path, default=Path("docs/adr"))

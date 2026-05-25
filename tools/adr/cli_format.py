@@ -10,9 +10,9 @@ from typing import Any
 
 
 def summary_line(fm: dict[str, Any]) -> str:
-    """Format one ADR's frontmatter as a single TSV row.
+    r"""Format one ADR's frontmatter as a single TSV row.
 
-    Columns: ``<id>\\t<status>\\t[<tags>]\\t<description>``. Used by
+    Columns: ``<id>\t<status>\t[<tags>]\t<description>``. Used by
     ``list_adrs.py`` and ``find_adrs.py`` so both produce identical output.
     """
     tags = ",".join(fm.get("tags", []) or [])

@@ -14,6 +14,11 @@ _TAG_LINE_RE = re.compile(r"^-\s*\*\*([a-z0-9-]+)\*\*")
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Insert ``- **<slug>** — <description>`` into ``_tags.md`` alphabetically.
+
+    Idempotent: re-running with an existing slug is a no-op (exit 0).
+    Returns 2 on bad input or missing ``_tags.md``.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("slug", help="tag slug (lowercase kebab)")
     parser.add_argument("description", help="one-line description")
@@ -25,6 +30,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     tags_path = args.adr_dir / "_tags.md"
+    if not tags_path.is_file():
+        print(f"error: _tags.md missing at {tags_path}", file=sys.stderr)
+        return 2
     existing = parse_tags_file(tags_path)
     if args.slug in existing:
         return 0  # idempotent no-op

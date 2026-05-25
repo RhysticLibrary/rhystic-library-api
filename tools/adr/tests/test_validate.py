@@ -62,10 +62,11 @@ class TestNumberingCheck:
         (adr_dir / "000001-real.md").write_text(adr_factory())
         (adr_dir / "000002-listframe.md").write_text("---\n- just a list\n---\n# x\n")
         errors = validate_repo(adr_dir, merge_gate=True)
-        # We don't assert on a specific message here — only that the call
-        # completed and produced some errors (the numbering check will report
-        # the filename id/name mismatch for the malformed file).
         assert isinstance(errors, list)
+        # The numbering check reports the unparseable frontmatter as a per-file
+        # error. Anything more specific would over-couple to the message text.
+        assert errors, "expected at least one error for the malformed file"
+        assert any("000002-listframe.md" in e for e in errors)
 
 
 class TestFrontmatterSchemaCheck:
@@ -128,6 +129,14 @@ class TestFrontmatterSchemaCheck:
         )
         errors = validate_repo(adr_dir)
         assert any("supersedes" in e.lower() and "000099" in e for e in errors)
+
+    def test_fails_on_null_date_field(self, adr_repo, adr_factory):
+        # YAML `null` deserializes to Python None — only "" (empty string)
+        # should mean "not yet set" for date-accepted / date-invalidated.
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo", "date-accepted": "null"}))
+        errors = validate_repo(adr_dir)
+        assert any("date-accepted" in e and "ISO-8601 or empty" in e for e in errors)
 
 
 class TestTagMembershipCheck:
@@ -235,6 +244,34 @@ class TestBodyStructureCheck:
         errors = validate_repo(adr_dir)
         assert [e for e in errors if "h1" in e.lower() or "header table" in e.lower()] == []
 
+    def test_fails_when_required_sections_are_out_of_order(self, adr_repo, adr_factory):
+        # Spec requires the four required sections in a prescribed order.
+        # Presence alone is not enough — a reshuffled ADR must fail.
+        adr_dir = adr_repo / "docs" / "adr"
+        out_of_order = [
+            "## Consequences\nc",
+            "## Decision Outcome\nd",
+            "## Considered Options\no",
+            "## Context and Problem Statement\nx",
+        ]
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo"}, sections=out_of_order))
+        errors = validate_repo(adr_dir)
+        assert any("must appear in order" in e for e in errors)
+
+    def test_does_not_report_order_when_a_section_is_missing(self, adr_repo, adr_factory):
+        # If a section is missing, only the missing-section error should fire —
+        # not a confusing order error on top of it.
+        adr_dir = adr_repo / "docs" / "adr"
+        missing = [
+            "## Context and Problem Statement\nx",
+            "## Considered Options\no",
+            "## Consequences\nc",  # Decision Outcome missing
+        ]
+        (adr_dir / "000001-foo.md").write_text(adr_factory({"name": "foo"}, sections=missing))
+        errors = validate_repo(adr_dir)
+        assert any("missing required section" in e and "Decision Outcome" in e for e in errors)
+        assert not any("must appear in order" in e for e in errors)
+
 
 class TestFrontmatterTableConsistency:
     def test_fails_when_status_differs(self, adr_repo, adr_factory):
@@ -293,6 +330,31 @@ class TestFrontmatterTableConsistency:
         )
         errors = validate_repo(adr_dir)
         assert any("Supersedes" in e for e in errors)
+
+    def test_tags_order_in_table_does_not_matter(self, adr_repo, adr_factory):
+        # Tags are a SET in the spec — rendering order in the table is
+        # presentation, not data. `[meta, process]` ↔ `process, meta` must pass.
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {"name": "foo", "tags": "[meta, process]"},
+                table_overrides={"Tags": "process, meta"},
+            )
+        )
+        errors = validate_repo(adr_dir)
+        assert [e for e in errors if "Tags" in e and "mismatch" in e] == []
+
+    def test_tags_set_mismatch_still_flags_missing_tag(self, adr_repo, adr_factory):
+        # Sanity-check the inverse: a genuinely different set still mismatches.
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(
+            adr_factory(
+                {"name": "foo", "tags": "[meta, process]"},
+                table_overrides={"Tags": "meta"},
+            )
+        )
+        errors = validate_repo(adr_dir)
+        assert any("Tags" in e and "mismatch" in e for e in errors)
 
 
 class TestMergeGate:
