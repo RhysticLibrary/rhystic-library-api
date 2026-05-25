@@ -42,3 +42,46 @@ class TestListAdrs:
         result = run_script("list_adrs.py", "--adr-dir", "docs/adr", cwd=adr_repo)
         assert result.returncode == 0
         assert result.stdout.strip() == ""
+
+
+class TestFindAdrs:
+    def _seed(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-auth.md").write_text(adr_factory({
+            "id": '"000001"', "name": "auth",
+            "description": "Auth decision.", "tags": "[process]",
+        }))
+        (adr_dir / "000002-logging.md").write_text(adr_factory({
+            "id": '"000002"', "name": "logging",
+            "description": "Logging decision.", "tags": "[meta]",
+            "status": "Deprecated", "date-invalidated": '"2026-05-24"',
+        }, table_overrides={"Status": "Deprecated", "Date Invalidated": "2026-05-24", "Tags": "meta"}))
+        return adr_dir
+
+    def test_filter_by_tag(self, adr_repo, adr_factory):
+        self._seed(adr_repo, adr_factory)
+        result = run_script("find_adrs.py", "--adr-dir", "docs/adr", "--tag", "process", cwd=adr_repo)
+        assert result.returncode == 0
+        assert "000001" in result.stdout and "000002" not in result.stdout
+
+    def test_filter_by_status(self, adr_repo, adr_factory):
+        self._seed(adr_repo, adr_factory)
+        result = run_script("find_adrs.py", "--adr-dir", "docs/adr", "--status", "Deprecated", cwd=adr_repo)
+        assert result.returncode == 0
+        assert "000002" in result.stdout and "000001" not in result.stdout
+
+    def test_filter_by_keyword(self, adr_repo, adr_factory):
+        self._seed(adr_repo, adr_factory)
+        result = run_script("find_adrs.py", "--adr-dir", "docs/adr", "--search", "logging", cwd=adr_repo)
+        assert result.returncode == 0
+        assert "000002" in result.stdout and "000001" not in result.stdout
+
+    def test_filters_and_together(self, adr_repo, adr_factory):
+        self._seed(adr_repo, adr_factory)
+        result = run_script(
+            "find_adrs.py", "--adr-dir", "docs/adr",
+            "--status", "Accepted", "--tag", "meta",
+            cwd=adr_repo,
+        )
+        # 000002 has tag meta but status Deprecated; AND eliminates it.
+        assert "000002" not in result.stdout
