@@ -1,18 +1,79 @@
 """ADR validator. Returns a list of error messages; empty list means valid."""
 from __future__ import annotations
 import re
+from datetime import date
 from pathlib import Path
 
 from adr_lib import enumerate_adrs, parse_frontmatter
 
 
 _FILENAME_RE = re.compile(r"^(?P<id>\d{6})-(?P<slug>[a-z0-9-]+)\.md$")
+_ALLOWED_STATUSES = {"Proposed", "Accepted", "Deprecated", "Superseded"}
+_REQUIRED_FIELDS = [
+    "id", "name", "description", "status",
+    "date-proposed", "date-accepted", "date-invalidated",
+    "supersedes", "superseded-by", "tags",
+]
+
+
+def _is_iso_date(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    try:
+        date.fromisoformat(value)
+        return True
+    except ValueError:
+        return False
+
+
+def _check_frontmatter_schema(paths: list[Path]) -> list[str]:
+    errors: list[str] = []
+    existing_ids = {_FILENAME_RE.match(p.name).group("id") for p in paths
+                    if _FILENAME_RE.match(p.name)}
+    for path in paths:
+        try:
+            fm = parse_frontmatter(path.read_text())
+        except ValueError:
+            continue  # numbering check already reported this
+        for field in _REQUIRED_FIELDS:
+            if field not in fm:
+                errors.append(f"{path.name}: missing required frontmatter field '{field}'")
+        if fm.get("status") not in _ALLOWED_STATUSES:
+            errors.append(
+                f"{path.name}: status {fm.get('status')!r} is unknown; "
+                f"must be one of {sorted(_ALLOWED_STATUSES)}"
+            )
+        desc = fm.get("description")
+        if not isinstance(desc, str) or not desc.strip():
+            errors.append(f"{path.name}: description must be a non-empty string")
+        if not _is_iso_date(fm.get("date-proposed")):
+            errors.append(f"{path.name}: date-proposed must be ISO-8601 (YYYY-MM-DD), got {fm.get('date-proposed')!r}")
+        for date_field in ("date-accepted", "date-invalidated"):
+            value = fm.get(date_field)
+            if value not in ("", None) and not _is_iso_date(value):
+                errors.append(f"{path.name}: {date_field} must be ISO-8601 or empty, got {value!r}")
+        tags = fm.get("tags")
+        if not isinstance(tags, list) or len(tags) == 0:
+            errors.append(f"{path.name}: tags must be a non-empty list")
+        for ref_field in ("supersedes", "superseded-by"):
+            refs = fm.get(ref_field, [])
+            if not isinstance(refs, list):
+                errors.append(f"{path.name}: {ref_field} must be a list")
+                continue
+            for ref in refs:
+                if not (isinstance(ref, str) and re.fullmatch(r"\d{6}", ref)):
+                    errors.append(f"{path.name}: {ref_field} entry {ref!r} must be a 6-digit ID string")
+                    continue
+                if ref not in existing_ids:
+                    errors.append(f"{path.name}: {ref_field} references unknown ADR {ref}")
+    return errors
 
 
 def validate_repo(adr_dir: Path, *, merge_gate: bool = False) -> list[str]:
     errors: list[str] = []
     paths = enumerate_adrs(adr_dir)
     errors.extend(_check_numbering(paths))
+    errors.extend(_check_frontmatter_schema(paths))
     return errors
 
 
