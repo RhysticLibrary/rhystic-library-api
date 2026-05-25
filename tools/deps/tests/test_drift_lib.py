@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from textwrap import dedent
+
 import pytest
-from drift_lib import Finding, Sighting, normalize_name
+from drift_lib import Finding, Sighting, normalize_name, parse_precommit_config
 
 
 class TestDataClasses:
@@ -41,3 +43,81 @@ class TestNormalizeName:
     )
     def test_lowercases_and_normalizes_separators(self, raw, expected):
         assert normalize_name(raw) == expected
+
+
+class TestParsePrecommitConfig:
+    def test_extracts_rev_pins_using_repo_basename(self, tmp_path):
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text(
+            dedent("""
+                repos:
+                  - repo: https://github.com/astral-sh/ruff-pre-commit
+                    rev: v0.15.14
+                    hooks:
+                      - id: ruff-check
+            """)
+        )
+        sightings = parse_precommit_config(config, root=tmp_path)
+        assert sightings == [
+            Sighting(
+                package="ruff-pre-commit",
+                file=".pre-commit-config.yaml",
+                location="repo",
+                version="v0.15.14",
+            ),
+        ]
+
+    def test_extracts_additional_dependencies(self, tmp_path):
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text(
+            dedent("""
+                repos:
+                  - repo: local
+                    hooks:
+                      - id: adr-validate
+                        name: ADR validator
+                        entry: python tools/adr/validate.py
+                        language: python
+                        additional_dependencies: ["pyyaml>=6.0"]
+            """)
+        )
+        sightings = parse_precommit_config(config, root=tmp_path)
+        assert sightings == [
+            Sighting(
+                package="pyyaml",
+                file=".pre-commit-config.yaml",
+                location="hook=adr-validate",
+                version=">=6.0",
+            ),
+        ]
+
+    def test_local_repo_emits_no_rev_sighting(self, tmp_path):
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text(
+            dedent("""
+                repos:
+                  - repo: local
+                    hooks:
+                      - id: foo
+                        name: foo
+                        entry: foo
+                        language: system
+            """)
+        )
+        assert parse_precommit_config(config, root=tmp_path) == []
+
+    def test_hook_without_additional_deps_is_skipped(self, tmp_path):
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text(
+            dedent("""
+                repos:
+                  - repo: https://github.com/pre-commit/pre-commit-hooks
+                    rev: v6.0.0
+                    hooks:
+                      - id: end-of-file-fixer
+            """)
+        )
+        sightings = parse_precommit_config(config, root=tmp_path)
+        # Only the rev sighting — no additional_dependencies entries.
+        assert len(sightings) == 1
+        assert sightings[0].package == "pre-commit-hooks"
