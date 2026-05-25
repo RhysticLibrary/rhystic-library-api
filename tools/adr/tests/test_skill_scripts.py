@@ -130,3 +130,39 @@ class TestTagUsage:
         assert "000001" in meta_line and "000002" in meta_line
         process_line = next(l for l in lines if l.startswith("process\t"))
         assert process_line == "process\t000001"
+
+
+class TestNewAdr:
+    def _write_template(self, adr_dir: Path) -> None:
+        (adr_dir / "_template.md").write_text(
+            "---\n"
+            'id: "{{id}}"\n'
+            "name: {{name}}\n"
+            'date-proposed: "{{date-proposed}}"\n'
+            "---\n\n# ADR {{id}}: TITLE\n"
+        )
+
+    def test_creates_first_adr_with_id_000001(self, adr_repo):
+        self._write_template(adr_repo / "docs" / "adr")
+        result = run_script("new_adr.py", "my-slug", "--adr-dir", "docs/adr", cwd=adr_repo)
+        assert result.returncode == 0, result.stderr
+        out_path = adr_repo / "docs" / "adr" / "000001-my-slug.md"
+        assert out_path.is_file()
+        content = out_path.read_text()
+        assert 'id: "000001"' in content
+        assert "name: my-slug" in content
+        assert "date-proposed: " in content
+        assert result.stdout.strip().endswith("000001-my-slug.md")
+
+    def test_increments_to_next_id(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        self._write_template(adr_dir)
+        (adr_dir / "000001-existing.md").write_text(adr_factory({"id": '"000001"', "name": "existing"}))
+        result = run_script("new_adr.py", "next-thing", "--adr-dir", "docs/adr", cwd=adr_repo)
+        assert result.returncode == 0
+        assert (adr_dir / "000002-next-thing.md").is_file()
+
+    def test_rejects_invalid_slug(self, adr_repo):
+        self._write_template(adr_repo / "docs" / "adr")
+        result = run_script("new_adr.py", "Bad Slug", "--adr-dir", "docs/adr", cwd=adr_repo)
+        assert result.returncode != 0
