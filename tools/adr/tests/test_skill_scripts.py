@@ -111,3 +111,22 @@ class TestListTags:
         assert lines[0].startswith("documentation\t")
         assert lines[1].startswith("meta\t")
         assert lines[2].startswith("process\t")
+
+
+class TestTagUsage:
+    def test_reports_usage_per_tag(self, adr_repo, adr_factory):
+        adr_dir = adr_repo / "docs" / "adr"
+        (adr_dir / "000001-foo.md").write_text(adr_factory({
+            "id": '"000001"', "name": "foo", "tags": "[meta, process]",
+        }))
+        (adr_dir / "000002-bar.md").write_text(adr_factory({
+            "id": '"000002"', "name": "bar", "tags": "[meta]",
+        }))
+        result = run_script("tag_usage.py", "--adr-dir", "docs/adr", cwd=adr_repo)
+        assert result.returncode == 0
+        lines = result.stdout.strip().splitlines()
+        assert "documentation\t" in lines or "documentation\t\n" in result.stdout
+        meta_line = next(l for l in lines if l.startswith("meta\t"))
+        assert "000001" in meta_line and "000002" in meta_line
+        process_line = next(l for l in lines if l.startswith("process\t"))
+        assert process_line == "process\t000001"
