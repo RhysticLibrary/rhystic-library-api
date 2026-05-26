@@ -240,7 +240,8 @@ def scan_root(root: Path) -> list[Finding]:
 
     workflows_dir = root / ".github" / "workflows"
     if workflows_dir.is_dir():
-        for wf in sorted(workflows_dir.glob("*.yml")):
+        workflows = sorted(list(workflows_dir.glob("*.yml")) + list(workflows_dir.glob("*.yaml")))
+        for wf in workflows:
             sightings.extend(parse_workflow(wf, root=root))
 
     return analyze_sightings(sightings)

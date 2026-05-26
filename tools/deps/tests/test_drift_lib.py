@@ -305,6 +305,33 @@ class TestScanRoot:
         # tmp_path has none of the scanned files.
         assert scan_root(tmp_path) == []
 
+    def test_scans_both_yml_and_yaml_workflow_extensions(self, tmp_path):
+        # GitHub Actions accepts both .yml and .yaml. The scanner must handle both.
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        (wf_dir / "ci.yml").write_text(
+            dedent("""
+                jobs:
+                  build:
+                    runs-on: ubuntu-latest
+                    steps:
+                      - uses: actions/checkout@v6
+            """)
+        )
+        (wf_dir / "release.yaml").write_text(
+            dedent("""
+                jobs:
+                  publish:
+                    runs-on: ubuntu-latest
+                    steps:
+                      - uses: actions/checkout@v5
+            """)
+        )
+        findings = scan_root(tmp_path)
+        drift = [f for f in findings if f.status == "drift"]
+        assert len(drift) == 1
+        assert drift[0].package == "actions/checkout"
+
 
 class TestScanRootDriftCases:
     def test_additional_deps_drift_is_detected(self, fixture_repo):
