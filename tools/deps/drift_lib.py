@@ -162,6 +162,9 @@ def analyze_sightings(sightings: list[Sighting]) -> list[Finding]:
     for package, group in sorted(groups.items()):
         if len(group) < 2:
             continue
+        # Cross-FILE drift is the intent; same-file repeats aren't actionable.
+        if len({s.file for s in group}) < 2:
+            continue
         parsed = [(s, _strip_to_version(s.version)) for s in group]
         parsed_versions = {v for s, v in parsed if v is not None}
         unparseable_count = sum(1 for s, v in parsed if v is None)

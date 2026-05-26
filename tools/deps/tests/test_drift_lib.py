@@ -245,6 +245,16 @@ class TestAnalyzeSightings:
         ]
         assert analyze_sightings(sightings) == []
 
+    def test_same_file_repeated_sightings_are_dropped(self):
+        # Cross-FILE drift is the intent; multiple sightings in one file
+        # (e.g., two `uses: actions/checkout@v6` in the same workflow) aren't
+        # actionable drift and shouldn't produce a finding.
+        sightings = [
+            Sighting(package="actions/checkout", file=".github/workflows/ci.yml", location="uses", version="v6"),
+            Sighting(package="actions/checkout", file=".github/workflows/ci.yml", location="uses", version="v6"),
+        ]
+        assert analyze_sightings(sightings) == []
+
     def test_matching_versions_emit_in_sync(self):
         sightings = [
             Sighting(package="pyyaml", file="a.txt", location="line 1", version=">=6.0.3"),
