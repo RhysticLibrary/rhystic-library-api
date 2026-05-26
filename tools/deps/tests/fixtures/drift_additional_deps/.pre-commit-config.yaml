@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: adr-validate
+        name: ADR validator
+        entry: python tools/adr/validate.py
+        language: python
+        additional_dependencies: ["pyyaml>=6.0"]
