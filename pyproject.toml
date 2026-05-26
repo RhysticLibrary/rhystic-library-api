@@ -7,6 +7,7 @@ addopts = "-ra --strict-markers"
 source = ["tools/adr", "tools/deps"]
 omit = [
     "tools/adr/tests/*",
+    "tools/deps/tests/*",
     # Skill CLI scripts are exercised end-to-end via subprocess in
     # test_skill_scripts.py. coverage.py doesn't follow subprocess
     # boundaries, so these would show 0% despite being thoroughly tested.
