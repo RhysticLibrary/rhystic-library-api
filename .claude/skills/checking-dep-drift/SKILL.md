@@ -41,7 +41,7 @@ This skill walks the after-dependabot cleanup so those don't silently drift.
    pytest                  # cheap and catches hook-env regressions
    ```
 
-5. **Commit on a flat-named branch** (e.g., `bump-pre-commit-hooks`), push, open a PR.
+5. **Commit on a hyphen-separated branch with no type prefix** (e.g., `bump-pre-commit-hooks`, not `chore/bump-pre-commit-hooks`), push, open a PR.
 
 ## Falling back to direct reads
 
