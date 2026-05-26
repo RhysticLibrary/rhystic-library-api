@@ -211,6 +211,10 @@ def parse_requirements(path: Path, root: Path) -> list[Sighting]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
+        # Strip pip-style inline comments — `Requirement()` rejects them otherwise.
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
         try:
             req = Requirement(line)
         except InvalidRequirement:

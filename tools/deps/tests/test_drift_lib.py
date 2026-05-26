@@ -158,6 +158,17 @@ class TestParseRequirements:
             Sighting(package="ruff", file="requirements-dev.txt", location="line 1", version=""),
         ]
 
+    def test_strips_inline_comments_before_parsing(self, tmp_path):
+        # `Requirement()` rejects pip-style inline comments. Strip them before parsing
+        # so lines like `pyyaml>=6.0.3  # sync with hook` aren't silently dropped.
+        reqs = tmp_path / "requirements-dev.txt"
+        reqs.write_text("pyyaml>=6.0.3  # sync with hook\nruff  # latest\n")
+        sightings = parse_requirements(reqs, root=tmp_path)
+        assert sightings == [
+            Sighting(package="pyyaml", file="requirements-dev.txt", location="line 1", version=">=6.0.3"),
+            Sighting(package="ruff", file="requirements-dev.txt", location="line 2", version=""),
+        ]
+
 
 class TestParseWorkflow:
     def test_extracts_uses_action_pins(self, tmp_path):
