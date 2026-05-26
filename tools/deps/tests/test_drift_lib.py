@@ -270,6 +270,28 @@ class TestAnalyzeSightings:
         assert ".github/workflows/c.yml" in f.recommendation
         assert "v6" in f.recommendation
 
+    def test_v_prefix_and_plain_versions_are_treated_as_in_sync(self):
+        # Same version expressed with and without leading 'v' should not be drift.
+        sightings = [
+            Sighting(package="markdownlint-cli2", file=".pre-commit-config.yaml", location="repo", version="v0.22.1"),
+            Sighting(package="markdownlint-cli2", file=".github/workflows/ci.yml", location="run", version="0.22.1"),
+        ]
+        findings = analyze_sightings(sightings)
+        assert len(findings) == 1
+        assert findings[0].status == "in_sync"
+
+    def test_equivalent_specifiers_with_different_raw_strings_are_in_sync(self):
+        # Both >=6.0.3 and ==6.0.3 normalize to the same Version. They are
+        # different *specifiers* but the same version pin — treat as in_sync.
+        # (Conservative call: equal underlying Version => in_sync.)
+        sightings = [
+            Sighting(package="pyyaml", file="a.txt", location="line 1", version=">=6.0.3"),
+            Sighting(package="pyyaml", file="b.txt", location="line 2", version="==6.0.3"),
+        ]
+        findings = analyze_sightings(sightings)
+        assert len(findings) == 1
+        assert findings[0].status == "in_sync"
+
 
 class TestScanRoot:
     def test_clean_fixture_emits_only_in_sync_findings_or_empty(self, fixture_repo):

@@ -162,8 +162,12 @@ def analyze_sightings(sightings: list[Sighting]) -> list[Finding]:
     for package, group in sorted(groups.items()):
         if len(group) < 2:
             continue
-        versions = {s.version for s in group}
-        if len(versions) == 1:
+        parsed = [(s, _strip_to_version(s.version)) for s in group]
+        parsed_versions = {v for s, v in parsed if v is not None}
+        unparseable_count = sum(1 for s, v in parsed if v is None)
+
+        if unparseable_count == 0 and len(parsed_versions) == 1:
+            # All sightings normalize to the same Version — in_sync regardless of raw differences.
             findings.append(
                 Finding(
                     package=package,
@@ -175,11 +179,11 @@ def analyze_sightings(sightings: list[Sighting]) -> list[Finding]:
             continue
 
         # Drift — find highest parseable version among sightings.
-        parsed = [(s, _strip_to_version(s.version)) for s in group]
         parseable = [(s, v) for s, v in parsed if v is not None]
         if not parseable:
             # All unparseable — report as drift with raw strings.
-            recommendation = f"bump to one of: {sorted(versions)} (no parseable versions)"
+            raw_versions = sorted({s.version for s in group})
+            recommendation = f"bump to one of: {raw_versions} (no parseable versions)"
             findings.append(
                 Finding(package=package, status="drift", sightings=list(group), recommendation=recommendation)
             )
