@@ -301,6 +301,17 @@ class TestAnalyzeSightings:
         assert len(findings) == 1
         assert findings[0].status == "in_sync"
 
+    def test_identical_unparseable_specifiers_are_in_sync(self):
+        # Compound specifiers like `>=1.0,<2.0` don't parse to a single Version.
+        # Treat identical raw strings as in_sync before falling through to drift.
+        sightings = [
+            Sighting(package="numpy", file="a/requirements.txt", location="line 1", version=">=1.0,<2.0"),
+            Sighting(package="numpy", file="b/requirements.txt", location="line 1", version=">=1.0,<2.0"),
+        ]
+        findings = analyze_sightings(sightings)
+        assert len(findings) == 1
+        assert findings[0].status == "in_sync"
+
     def test_equivalent_specifiers_with_different_raw_strings_are_in_sync(self):
         # Both >=6.0.3 and ==6.0.3 normalize to the same Version. They are
         # different *specifiers* but the same version pin — treat as in_sync.

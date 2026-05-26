@@ -165,6 +165,19 @@ def analyze_sightings(sightings: list[Sighting]) -> list[Finding]:
         # Cross-FILE drift is the intent; same-file repeats aren't actionable.
         if len({s.file for s in group}) < 2:
             continue
+        raw_versions = {s.version for s in group}
+        # Identical raw specifiers — in_sync even when the spec is unparseable
+        # (e.g., compound specifiers like `>=1.0,<2.0`).
+        if len(raw_versions) == 1:
+            findings.append(
+                Finding(
+                    package=package,
+                    status="in_sync",
+                    sightings=list(group),
+                    recommendation="in sync (informational)",
+                )
+            )
+            continue
         parsed = [(s, _strip_to_version(s.version)) for s in group]
         parsed_versions = {v for s, v in parsed if v is not None}
         unparseable_count = sum(1 for s, v in parsed if v is None)
@@ -185,8 +198,7 @@ def analyze_sightings(sightings: list[Sighting]) -> list[Finding]:
         parseable = [(s, v) for s, v in parsed if v is not None]
         if not parseable:
             # All unparseable — report as drift with raw strings.
-            raw_versions = sorted({s.version for s in group})
-            recommendation = f"bump to one of: {raw_versions} (no parseable versions)"
+            recommendation = f"bump to one of: {sorted(raw_versions)} (no parseable versions)"
             findings.append(
                 Finding(package=package, status="drift", sightings=list(group), recommendation=recommendation)
             )
