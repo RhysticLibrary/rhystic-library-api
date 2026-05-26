@@ -66,3 +66,10 @@ class TestJsonOutput:
         # Clean fixture has no drift; in-sync findings are still informational
         # entries — but we should never emit drift entries.
         assert all(entry["status"] != "drift" for entry in payload)
+
+
+class TestMalformedYaml:
+    def test_malformed_yaml_exits_two_with_stderr_message(self):
+        result = run_cli("--root", str(FIXTURES / "malformed"))
+        assert result.returncode == 2
+        assert "check_drift" in result.stderr

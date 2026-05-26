@@ -2,7 +2,7 @@
 # See https://pre-commit.com/
 
 # Globally skip agent working docs (mirrors the CI markdownlint exclusion).
-exclude: ^docs/superpowers/
+exclude: '^(docs/superpowers/|tools/deps/tests/fixtures/malformed/)'
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
