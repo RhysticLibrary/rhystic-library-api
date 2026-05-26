@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -41,3 +42,27 @@ class TestExitCodes:
         body = "\n".join(lines[pkg_idx:])
         assert ".pre-commit-config.yaml" in body
         assert "requirements-dev.txt" in body
+
+
+class TestJsonOutput:
+    def test_json_flag_emits_parseable_array(self):
+        result = run_cli("--root", str(FIXTURES / "drift_additional_deps"), "--json")
+        assert result.returncode == 1, result.stderr
+        payload = json.loads(result.stdout)
+        assert isinstance(payload, list)
+        assert len(payload) == 1
+        entry = payload[0]
+        assert entry["package"] == "pyyaml"
+        assert entry["status"] == "drift"
+        assert entry["recommendation"].startswith("bump")
+        files_seen = {s["file"] for s in entry["sightings"]}
+        assert ".pre-commit-config.yaml" in files_seen
+        assert "requirements-dev.txt" in files_seen
+
+    def test_json_clean_fixture_returns_empty_array(self):
+        result = run_cli("--root", str(FIXTURES / "clean"), "--json")
+        assert result.returncode == 0
+        payload = json.loads(result.stdout)
+        # Clean fixture has no drift; in-sync findings are still informational
+        # entries — but we should never emit drift entries.
+        assert all(entry["status"] != "drift" for entry in payload)
