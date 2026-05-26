@@ -2,9 +2,9 @@
 id: "000002"
 name: secrets-in-version-control
 description: Forbids committing secrets, enumerates the file types and inline-value forms covered, names the runtime model and leak-response drill, and pins gitleaks as the defense-in-depth enforcement.
-status: Proposed
+status: Accepted
 date-proposed: "2026-05-25"
-date-accepted: ""
+date-accepted: "2026-05-25"
 date-invalidated: ""
 supersedes: []
 superseded-by: []
@@ -15,9 +15,9 @@ tags: [security, process]
 
 | Field            | Value                                |
 |------------------|--------------------------------------|
-| Status           | Proposed                             |
+| Status           | Accepted                             |
 | Date Proposed    | 2026-05-25                           |
-| Date Accepted    | —                                    |
+| Date Accepted    | 2026-05-25                           |
 | Date Invalidated | —                                    |
 | Authors          | Steven Timothy                       |
 | Supersedes       | —                                    |
