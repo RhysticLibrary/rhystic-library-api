@@ -1,0 +1,43 @@
+"""Subprocess tests for check_drift.py CLI."""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+DEPS_DIR = Path(__file__).resolve().parents[1]
+SCRIPT = DEPS_DIR / "check_drift.py"
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+
+
+def run_cli(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+class TestExitCodes:
+    def test_clean_fixture_exits_zero(self):
+        result = run_cli("--root", str(FIXTURES / "clean"))
+        assert result.returncode == 0, result.stderr
+        assert "no drift" in result.stdout.lower() or result.stdout.strip() == ""
+
+    def test_drift_fixture_exits_one(self):
+        result = run_cli("--root", str(FIXTURES / "drift_additional_deps"))
+        assert result.returncode == 1, result.stderr
+        assert "pyyaml" in result.stdout
+        assert ">=6.0.3" in result.stdout
+
+    def test_human_report_lists_sightings_under_package_header(self):
+        result = run_cli("--root", str(FIXTURES / "drift_additional_deps"))
+        assert result.returncode == 1
+        # Package name appears, then sighting files appear in subsequent lines.
+        lines = result.stdout.splitlines()
+        pkg_idx = next(i for i, line in enumerate(lines) if "pyyaml" in line)
+        body = "\n".join(lines[pkg_idx:])
+        assert ".pre-commit-config.yaml" in body
+        assert "requirements-dev.txt" in body
