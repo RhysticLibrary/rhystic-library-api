@@ -18,9 +18,7 @@ def format_human(findings: list[Finding]) -> str:
         return "no drift\n"
 
     out: list[str] = [f"DRIFT FOUND ({len(drift)} findings):", ""]
-    for f in findings:
-        if f.status != "drift":
-            continue
+    for f in drift:
         out.append(f.package)
         col_width = max(len(f"{s.file} {s.location}") for s in f.sightings) + 2
         for s in f.sightings:
