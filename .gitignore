@@ -41,6 +41,8 @@ Thumbs.db
 *.p12
 *.jks
 *.crt
+*-local.*
+!*-local.example
 
 # === Logs ===
 *.log
