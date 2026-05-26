@@ -41,6 +41,7 @@ Thumbs.db
 *.p12
 *.jks
 *.crt
+*-local.*
 
 # === Logs ===
 *.log
@@ -51,6 +52,10 @@ application-local.*
 *-local.yml
 *-local.yaml
 *-local.properties
+# Re-include *.example templates last so they survive the broader *-local.*
+# and application-local.* ignore patterns above.
+!*-local.example
+!*-local.*.example
 
 # === Docker ===
 .docker/
