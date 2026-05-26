@@ -282,3 +282,29 @@ class TestScanRoot:
     def test_returns_empty_when_no_files_exist(self, tmp_path):
         # tmp_path has none of the scanned files.
         assert scan_root(tmp_path) == []
+
+
+class TestScanRootDriftCases:
+    def test_additional_deps_drift_is_detected(self, fixture_repo):
+        findings = scan_root(fixture_repo("drift_additional_deps"))
+        drift = [f for f in findings if f.status == "drift"]
+        assert len(drift) == 1
+        f = drift[0]
+        assert f.package == "pyyaml"
+        assert ".pre-commit-config.yaml" in f.recommendation
+        assert ">=6.0.3" in f.recommendation
+
+    def test_inline_ci_drift_is_detected(self, fixture_repo):
+        findings = scan_root(fixture_repo("drift_inline_ci"))
+        drift = [f for f in findings if f.status == "drift"]
+        assert len(drift) == 1
+        assert drift[0].package == "markdownlint-cli2"
+
+    def test_uses_action_drift_across_workflows_is_detected(self, fixture_repo):
+        findings = scan_root(fixture_repo("drift_uses_action"))
+        drift = [f for f in findings if f.status == "drift"]
+        assert len(drift) == 1
+        f = drift[0]
+        assert f.package == "actions/checkout"
+        assert "v6" in f.recommendation
+        assert "release.yml" in f.recommendation
