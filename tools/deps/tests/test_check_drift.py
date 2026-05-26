@@ -63,9 +63,7 @@ class TestJsonOutput:
         result = run_cli("--root", str(FIXTURES / "clean"), "--json")
         assert result.returncode == 0
         payload = json.loads(result.stdout)
-        # Clean fixture has no drift; in-sync findings are still informational
-        # entries — but we should never emit drift entries.
-        assert all(entry["status"] != "drift" for entry in payload)
+        assert payload == []
 
 
 class TestMalformedYaml:

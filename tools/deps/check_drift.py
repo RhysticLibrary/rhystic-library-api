@@ -33,6 +33,7 @@ def format_human(findings: list[Finding]) -> str:
 
 def format_json(findings: list[Finding]) -> str:
     """Format findings as a JSON report."""
+    drift = [f for f in findings if f.status == "drift"]
     payload = [
         {
             "package": f.package,
@@ -40,7 +41,7 @@ def format_json(findings: list[Finding]) -> str:
             "sightings": [{"file": s.file, "location": s.location, "version": s.version} for s in f.sightings],
             "recommendation": f.recommendation,
         }
-        for f in findings
+        for f in drift
     ]
     return json.dumps(payload, indent=2) + "\n"
 
