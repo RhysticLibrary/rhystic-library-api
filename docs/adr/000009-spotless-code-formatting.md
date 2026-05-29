@@ -41,8 +41,8 @@ The tool *version* is **out of scope**: it is delegated to dependency tooling, m
 
 ## Considered Options
 
-- **Spotless + google-java-format (GOOGLE style)** — a Maven plugin that delegates to Google's deterministic Java formatter; `spotless:check` integrates into `verify` and `spotless:apply` auto-fixes.
-- **`fmt-maven-plugin` (Spotify)** — Spotify's thin Maven wrapper around google-java-format; simpler configuration but less actively maintained and with fewer formatting options.
+- **Spotless + google-java-format (GOOGLE style)** — a Maven plugin that delegates to Google's deterministic Java formatter; `spotless:check` is configured (via a POM execution) to run in the Maven `verify` phase and `spotless:apply` auto-fixes.
+- **`fmt-maven-plugin` (Spotify)** — Spotify's thin Maven wrapper around google-java-format; simpler configuration but narrower in scope (a single-language wrapper) compared to Spotless, which is a broader, actively-developed multi-language formatting framework.
 - **IDE / `.editorconfig`-only** — rely on each developer's IDE to apply consistent formatting; no build-time enforcement.
 - **Do nothing** — accept inconsistent formatting and resolve style disagreements in code review.
 
@@ -62,7 +62,7 @@ Spotless is the right choice on every driver: it produces fully deterministic ou
   - `mvn verify` is the same gate locally and in CI; no per-developer IDE setup is required.
   - google-java-format is non-configurable by design, so there is nothing to debate or drift.
 - **Negative**
-  - Spotless overlaps in scope with separately-adopted static analysis tooling; in rare edge cases the tools may disagree and require a case-by-case suppression.
+  - Spotless may overlap in scope with any style or static-analysis tooling the project adopts; in rare edge cases the tools may disagree and require a case-by-case suppression.
   - Adds a build step to `mvn verify`, increasing its wall-clock time slightly.
 
 ## Pros and Cons of the Options
