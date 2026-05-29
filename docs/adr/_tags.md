@@ -2,6 +2,7 @@
 
 Every tag used in an ADR's frontmatter MUST appear in this list. Before introducing a new tag, add it here (alphabetically) with a short description. The CI `adr-validate` job fails on any unknown tag.
 
+- **architecture** — Decisions about application architecture, technology stack, language, and framework.
 - **documentation** — Decisions about docs, READMEs, comments, or written artifacts.
 - **meta** — Decisions about the ADR process itself.
 - **process** — Decisions about how work is done (workflow, conventions, ceremony).
