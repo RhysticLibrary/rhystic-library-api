@@ -1,5 +1,5 @@
 ---
-id: "000006"
+id: "000008"
 name: h2-test-database
 description: Use the H2 in-memory database in MySQL-compatibility mode as the test database now, accepting MySQL divergence as a known trade-off to revisit later.
 status: Accepted
@@ -11,7 +11,7 @@ superseded-by: []
 tags: [architecture]
 ---
 
-# ADR 000006: H2 In-Memory Database for Tests
+# ADR 000008: H2 In-Memory Database for Tests
 
 | Field            | Value                                |
 |------------------|--------------------------------------|
@@ -26,9 +26,9 @@ tags: [architecture]
 
 ## Context and Problem Statement
 
-[`000005`](000005-persistence-stack-mysql-flyway-jpa.md) chose MySQL, Flyway, and Spring Data JPA/Hibernate as the production persistence stack and explicitly deferred the test-database strategy to a separate decision. This ADR makes that decision: what database the automated test suite runs against.
+The persistence stack is established across three ADRs: [`000005`](000005-mysql-relational-database.md) (MySQL), [`000006`](000006-flyway-schema-migrations.md) (Flyway), and [`000007`](000007-spring-data-jpa-hibernate-data-access.md) (Spring Data JPA/Hibernate). Those ADRs cover production. This ADR makes a separate, independent decision: what database the automated test suite runs against.
 
-Production runs MySQL, so the central tension is fidelity versus speed and simplicity. The closer the test database is to production MySQL, the more confidence the suite gives — but the more infrastructure it requires. The key risk to name honestly: **H2, even in its MySQL-compatibility mode, is not MySQL.** It diverges in SQL dialect, built-in functions, and DDL semantics, so Flyway migrations written for MySQL and MySQL-specific query behavior are not fully exercised against the real engine in tests.
+Production runs MySQL, so the central tension is fidelity versus speed and simplicity. The closer the test database is to production MySQL, the more confidence the suite gives — but the more infrastructure it requires. The key risk to name honestly: **H2, even in its MySQL-compatibility mode, is not MySQL.** It diverges in SQL dialect, built-in functions, and DDL semantics, so the Flyway migrations written for MySQL ([`000006`](000006-flyway-schema-migrations.md)) and MySQL-specific query behavior are not fully exercised against the real engine in tests.
 
 ## Decision Drivers
 
@@ -82,4 +82,5 @@ This is explicitly an interim choice, not a permanent endorsement. Running the s
 ## Links
 
 - [`000001-adr-process-and-structure.md`](000001-adr-process-and-structure.md) — ADR process and structure.
-- [`000005-persistence-stack-mysql-flyway-jpa.md`](000005-persistence-stack-mysql-flyway-jpa.md) — production persistence stack that deferred this test-database decision.
+- [`000005-mysql-relational-database.md`](000005-mysql-relational-database.md) — the production database this test strategy stands in for.
+- [`000006-flyway-schema-migrations.md`](000006-flyway-schema-migrations.md) — the migrations whose fidelity against H2 is the central trade-off.
