@@ -32,7 +32,7 @@ This decision is shaped by a stated long-term direction. Today the whole applica
 
 ## Decision Drivers
 
-- **Enforced domain isolation.** Domain boundaries should be guaranteed by the build graph, not by convention — a forbidden cross-domain dependency should fail to compile, not merely fail review.
+- **Enforced domain isolation.** Domain boundaries should be guaranteed mechanically by the build, not left to convention or review — a forbidden cross-domain dependency should fail the build.
 - **Cheap future extraction.** Each domain should be liftable into its own microservice/repo with minimal rework; the seams that will become network boundaries should already be network-shaped.
 - **Reuse by a separate frontend API.** The per-domain HTTP APIs built here are consumed by a future frontend API in another repo, so domain-specific APIs are needed regardless of extraction.
 - **Centralized build governance.** Dependency and plugin versions should be managed in one place so every module stays consistent.
@@ -76,18 +76,20 @@ rhystic-library-api/                 parent, packaging = pom (dependency + plugi
 
 **Dependency rules.** Allowed: `boot` → every `<domain>-impl`; `<domain>-impl` → its own `<domain>-types`; `<domain>-impl` → another domain's `<other>-client` (transitively pulling `<other>-types`); `<domain>-client` → its own `<domain>-types`. Forbidden: `<domain>-impl` → another `<domain>-impl` (no implementation ever sees another's entities, services, or repositories); anything → `boot`; `<domain>-types` → anything domain-specific. So `organizations-impl` needing user data depends on `users-client` → `users-types`, and **never** on `users-impl`.
 
+**Enforcement.** The module layout and Maven's reactor are necessary but not sufficient on their own: the reactor rejects dependency *cycles*, but a one-directional forbidden edge (for example `users-impl` declaring `cards-impl` in its POM) would otherwise resolve and compile cleanly. To make the forbidden-edge rules mechanical rather than a matter of code review, the build carries an explicit guard that fails when a banned edge is declared — the Maven Enforcer plugin's banned-dependencies rule, optionally complemented by an ArchUnit test for finer-grained package-level rules. The specific guard configuration is deferred to the implementing build; the requirement that forbidden edges fail the build is part of this decision.
+
 **Cross-domain calls go over HTTP.** A `<domain>-client` is self-contained — its only dependency is its own `-types`, so it never needs the target domain's implementation. The sole difference between "monolith" and "extracted" is the base URL the client points at, configured in `boot`. Inside the single `boot` process this makes a cross-domain call a real **loopback HTTP request** (serialize, traverse the web stack, hit the other controller in the same JVM, with internal auth applying). This overhead is **accepted deliberately**. It is the price of strict isolation — an in-process direct call is impossible without breaking the core invariant. It also makes every cross-domain call remote-shaped, so extraction is a configuration change rather than a rewrite. And the same domain-specific APIs are what the future frontend API consumes, so building them now is not speculative.
 
 **Naming convention.** `<domain>-impl` (not `-app`, which overpromises for a library `boot` hosts, nor `-service`, which collides with the Spring `@Service` layer); `<domain>-types` (not `-models`, since these are wire data, not the JPA domain model); plural domain directories. Coordinate convention: groupId `com.rhysticlibrary`, artifactIds matching module names, so extraction is a clean lift of coordinates.
 
 **Shared cross-cutting types — sanctioned, deferred.** Types belonging to no single domain (pagination wrappers, a standard error envelope, common value objects) are anticipated. This ADR sanctions a future `common-types` leaf module that any `-types`/`-client`/`-impl` may depend on, but does not create it now — it is added the day a genuinely shared type appears, without a new decision, avoiding a junk-drawer module on day one.
 
-The following are **deferred to the implementing build change** and may be refined without amending this ADR: the concrete initial domain set (beyond the illustrative `users`/`cards`/`organizations`), the exact HTTP-client technology and internal-auth mechanism, whether and when to introduce `common-types`, and per-module plugin/dependency specifics under the parent's management.
+The following are **deferred to the implementing build change** and may be refined without amending this ADR: the concrete initial domain set (beyond the illustrative `users`/`cards`/`organizations`), the exact HTTP-client technology and internal-auth mechanism, whether and when to introduce `common-types`, the exact dependency-enforcement guard configuration (Maven Enforcer banned-dependencies rules and/or ArchUnit), and per-module plugin/dependency specifics under the parent's management.
 
 ## Consequences
 
 - **Positive**
-  - Domain boundaries are enforced by the build graph — a forbidden dependency fails to compile rather than slipping through review.
+  - Domain boundaries are enforced mechanically by a build-time guard (Maven Enforcer banned-dependencies, optionally ArchUnit) — a forbidden dependency fails the build rather than slipping through review.
   - Each domain extracts to its own microservice/repo as a near one-move lift; cross-domain calls are already remote-shaped.
   - The per-domain HTTP APIs are reusable by the future separate frontend API.
   - The parent centralizes dependency and plugin management, keeping every module consistent.
@@ -101,7 +103,7 @@ The following are **deferred to the implementing build change** and may be refin
 
 ### Domain-sliced multi-module modulith
 
-- Pros: boundaries enforced by the build graph; one-move per-domain extraction; cross-domain seams already network-shaped; APIs reusable by the frontend; centralized build governance.
+- Pros: boundaries enforced mechanically by a build-time guard; one-move per-domain extraction; cross-domain seams already network-shaped; APIs reusable by the frontend; centralized build governance.
 - Cons: most modules/poms to maintain; loopback HTTP overhead in-process; contracts and clients must be defined up front.
 
 ### Single-module monolith
