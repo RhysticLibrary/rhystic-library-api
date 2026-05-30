@@ -17,6 +17,6 @@ FROM eclipse-temurin:25-jre AS runtime
 WORKDIR /app
 RUN useradd --system --uid 1001 spring
 USER spring
-COPY --from=build /workspace/boot/target/boot-*.jar app.jar
+COPY --from=build --chown=spring:spring /workspace/boot/target/boot-*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

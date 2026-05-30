@@ -1,0 +1,43 @@
+# Build output
+target/
+boot/target/
+*.jar
+
+# Version control
+.git/
+.gitignore
+
+# Python tooling (ADR process only; not part of the app image)
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+__pycache__/
+pyproject.toml
+requirements-dev.txt
+tools/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Docs and project meta (not needed in the build context)
+docs/
+*.md
+.github/
+.pre-commit-config.yaml
+.editorconfig
+.markdownlint.jsonc
+
+# Local env / secrets (ADR 000002) — never into the build context
+.env
+.env.*
+!.env.example
+*-local.*
+*.pem
+*.key
+*.p12
+*.jks
+*.crt
