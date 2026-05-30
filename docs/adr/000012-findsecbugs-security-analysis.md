@@ -45,12 +45,12 @@ FindSecBugs also complements the project's no-secrets-in-VCS security posture es
 
 - **FindSecBugs (SpotBugs plugin)** — a security rule pack that runs inside the existing SpotBugs execution; detects injection, weak cryptography, insecure deserialization, path traversal, and similar patterns in first-party code.
 - **OWASP Dependency-Check** — scans third-party dependencies against known CVE databases; a different scope (vulnerable dependencies) rather than first-party code analysis.
-- **Snyk / Semgrep** — capable tools, but Snyk is SaaS-backed (external service dependency, account required) and Semgrep is a separate analysis engine and ecosystem outside the established Maven/SpotBugs workflow.
+- **Snyk / Semgrep** — capable tools, but Snyk is SaaS-backed (external service dependency, account required) and Semgrep has Java/Maven/CI support but introduces a second analysis engine and ecosystem with no justification when the SpotBugs-plugin path already covers this need.
 - **Do nothing** — rely solely on the existing correctness gate from `000011` and developer judgment for security patterns.
 
 ## Decision Outcome
 
-Add **FindSecBugs** as a plugin to the SpotBugs execution established in [`000011`](000011-spotbugs-static-analysis.md). It runs at full strength within that same `verify`-bound execution, adding its security detectors alongside SpotBugs's existing correctness detectors. The build fails on any security finding.
+Add **FindSecBugs** as a plugin to the SpotBugs execution established in [`000011`](000011-spotbugs-static-analysis.md). It runs within that same `verify`-bound execution, inheriting the `effort=Max` / `threshold=Low` configuration established in `000011`, adding its security detectors alongside SpotBugs's existing correctness detectors. The build fails on any security finding.
 
 FindSecBugs is the natural fit because it extends the tool and configuration already in place rather than introducing a second analysis engine. The other options either address a different scope (OWASP Dependency-Check covers dependency vulnerabilities, not first-party code) or introduce a new engine and ecosystem dependency (Snyk, Semgrep) that is not justified when the SpotBugs plugin path is available.
 
@@ -83,7 +83,7 @@ Scope is first-party code analysis only. Vulnerable-dependency scanning — e.g.
 ### Snyk / Semgrep
 
 - Pros: powerful tools with broad rule sets; Semgrep supports custom rules; Snyk covers both code and dependency scanning.
-- Cons: Snyk is SaaS-backed, adding an external service dependency and account requirement to the security path; Semgrep is a separate analysis engine and ecosystem outside the established Maven/SpotBugs workflow; neither reuses the existing SpotBugs execution.
+- Cons: Snyk is SaaS-backed, adding an external service dependency and account requirement to the security path; Semgrep has Java/Maven/CI support but introduces a second analysis engine and ecosystem with no justification when the SpotBugs-plugin path already covers this need; neither reuses the existing SpotBugs execution.
 
 ### Do nothing
 
