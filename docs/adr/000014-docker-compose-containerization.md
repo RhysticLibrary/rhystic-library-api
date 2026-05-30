@@ -2,9 +2,9 @@
 id: "000014"
 name: docker-compose-containerization
 description: Containerize the application with a multi-stage Docker image orchestrated by Docker Compose — local dev now and interim single-host production (app container, external MySQL); CI stays on in-memory H2.
-status: Proposed
+status: Accepted
 date-proposed: "2026-05-29"
-date-accepted: ""
+date-accepted: "2026-05-29"
 date-invalidated: ""
 supersedes: []
 superseded-by: []
@@ -15,9 +15,9 @@ tags: [architecture]
 
 | Field            | Value                                |
 |------------------|--------------------------------------|
-| Status           | Proposed                             |
+| Status           | Accepted                             |
 | Date Proposed    | 2026-05-29                           |
-| Date Accepted    | —                                    |
+| Date Accepted    | 2026-05-29                           |
 | Date Invalidated | —                                    |
 | Authors          | Steven Timothy                       |
 | Supersedes       | —                                    |
