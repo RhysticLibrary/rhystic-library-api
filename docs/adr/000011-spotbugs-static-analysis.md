@@ -59,8 +59,8 @@ SpotBugs also supports a plugin ecosystem that allows additional detectors to be
 ## Consequences
 
 - **Positive**
-  - Catches a class of defects — null dereferences, resource leaks, contract violations — that the format and style gates miss entirely.
-  - `effort=Max` / `threshold=Low` surfaces the most issues while the codebase is small, making the cost of adoption lowest now.
+  - Catches a class of defects (the same kinds noted in Context) that the format and style gates miss entirely.
+  - `effort=Max` / `threshold=Low` (where `Low` is the minimum confidence level a finding must reach to be reported, so the lowest setting reports the most findings) surfaces the most issues while the codebase is small, making the cost of adoption lowest now.
   - Local and CI enforcement are identical: both run `mvn verify`.
   - Zero-violation baseline is established from the first commit; there is no backlog to clear.
 - **Negative**
@@ -83,7 +83,7 @@ SpotBugs also supports a plugin ecosystem that allows additional detectors to be
 ### Error Prone
 
 - Pros: compile-time checker integrated into `javac`; finds certain bug patterns at the earliest possible stage; zero additional build phase.
-- Cons: heavier build integration (requires compiler flag wiring); different configuration model; narrower set of detectors than SpotBugs for bytecode-level patterns.
+- Cons: heavier build integration (requires compiler flag wiring); different configuration model; operates at compile time on source/AST rather than on bytecode, so its detector coverage is complementary to — not a superset or subset of — SpotBugs's.
 
 ### Do nothing
 
