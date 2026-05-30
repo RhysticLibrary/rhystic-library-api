@@ -29,8 +29,8 @@
     <findsecbugs.version>1.13.0</findsecbugs.version>
   </properties>
 
-  <!-- boot module is added in Task 2 -->
   <modules>
+    <module>boot</module>
   </modules>
 
   <build>
