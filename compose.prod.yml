@@ -5,7 +5,8 @@ services:
     image: "${APP_IMAGE:?set APP_IMAGE to the published image reference}"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # Forward-looking: consumed once persistence lands. External/managed MySQL.
+      # Forward-looking and intentionally optional (empty default): the app does not
+      # use a datasource yet (persistence deferred). Set these once persistence lands.
       SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL:-}"
       SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME:-}"
       SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD:-}"
