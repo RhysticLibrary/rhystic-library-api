@@ -28,6 +28,7 @@
     <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
     <findsecbugs.version>1.13.0</findsecbugs.version>
     <asm.version>9.8</asm.version>
+    <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
   </properties>
 
   <modules>
@@ -139,6 +140,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco-maven-plugin.version}</version>
         <executions>
           <execution>
             <id>jacoco-prepare-agent</id>
