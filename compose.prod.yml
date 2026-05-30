@@ -1,0 +1,12 @@
+services:
+  app:
+    # Run a pre-built, published image rather than building locally.
+    build: !reset null
+    image: "${APP_IMAGE:?set APP_IMAGE to the published image reference}"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # Forward-looking: consumed once persistence lands. External/managed MySQL.
+      SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL:-}"
+      SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME:-}"
+      SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD:-}"
+    restart: always
