@@ -2,9 +2,9 @@
 id: "000013"
 name: jacoco-coverage-gate
 description: Adopt JaCoCo enforcing 90% line and branch coverage project-wide via `mvn verify`.
-status: Proposed
+status: Accepted
 date-proposed: "2026-05-29"
-date-accepted: ""
+date-accepted: "2026-05-29"
 date-invalidated: ""
 supersedes: []
 superseded-by: []
@@ -15,9 +15,9 @@ tags: [quality]
 
 | Field            | Value                                |
 |------------------|--------------------------------------|
-| Status           | Proposed                             |
+| Status           | Accepted                             |
 | Date Proposed    | 2026-05-29                           |
-| Date Accepted    | —                                    |
+| Date Accepted    | 2026-05-29                           |
 | Date Invalidated | —                                    |
 | Authors          | Steven Timothy                       |
 | Supersedes       | —                                    |

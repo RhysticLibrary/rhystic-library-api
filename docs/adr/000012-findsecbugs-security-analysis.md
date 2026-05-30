@@ -2,9 +2,9 @@
 id: "000012"
 name: findsecbugs-security-analysis
 description: Add the FindSecBugs security rule pack as a SpotBugs plugin, enforced via `mvn verify`, failing on any security finding.
-status: Proposed
+status: Accepted
 date-proposed: "2026-05-29"
-date-accepted: ""
+date-accepted: "2026-05-29"
 date-invalidated: ""
 supersedes: []
 superseded-by: []
@@ -15,9 +15,9 @@ tags: [quality, security]
 
 | Field            | Value                                |
 |------------------|--------------------------------------|
-| Status           | Proposed                             |
+| Status           | Accepted                             |
 | Date Proposed    | 2026-05-29                           |
-| Date Accepted    | —                                    |
+| Date Accepted    | 2026-05-29                           |
 | Date Invalidated | —                                    |
 | Authors          | Steven Timothy                       |
 | Supersedes       | —                                    |

@@ -2,9 +2,9 @@
 id: "000009"
 name: spotless-code-formatting
 description: Adopt Spotless with google-java-format as the project's code formatter, enforced via `mvn verify`.
-status: Proposed
+status: Accepted
 date-proposed: "2026-05-29"
-date-accepted: ""
+date-accepted: "2026-05-29"
 date-invalidated: ""
 supersedes: []
 superseded-by: []
@@ -15,9 +15,9 @@ tags: [quality]
 
 | Field            | Value                                |
 |------------------|--------------------------------------|
-| Status           | Proposed                             |
+| Status           | Accepted                             |
 | Date Proposed    | 2026-05-29                           |
-| Date Accepted    | —                                    |
+| Date Accepted    | 2026-05-29                           |
 | Date Invalidated | —                                    |
 | Authors          | Steven Timothy                       |
 | Supersedes       | —                                    |
