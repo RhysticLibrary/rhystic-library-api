@@ -27,6 +27,7 @@
     <checkstyle.version>10.21.0</checkstyle.version>
     <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
     <findsecbugs.version>1.13.0</findsecbugs.version>
+    <asm.version>9.8</asm.version>
   </properties>
 
   <modules>
@@ -87,30 +88,31 @@
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>${spotbugs-maven-plugin.version}</version>
         <dependencies>
+          <!-- ASM 9.8+ required for Java 25 (class-file major version 69); remove once spotbugs-maven-plugin bundles ASM >= 9.8 natively. -->
           <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.8</version>
+            <version>${asm.version}</version>
           </dependency>
           <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-analysis</artifactId>
-            <version>9.8</version>
+            <version>${asm.version}</version>
           </dependency>
           <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-commons</artifactId>
-            <version>9.8</version>
+            <version>${asm.version}</version>
           </dependency>
           <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-tree</artifactId>
-            <version>9.8</version>
+            <version>${asm.version}</version>
           </dependency>
           <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-util</artifactId>
-            <version>9.8</version>
+            <version>${asm.version}</version>
           </dependency>
         </dependencies>
         <configuration>
