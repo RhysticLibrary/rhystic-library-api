@@ -49,13 +49,13 @@ The substrate is Maven ([`000004`](000004-maven-build-tool.md)) running Java and
 
 ## Decision Outcome
 
-Adopt the `jacoco-maven-plugin` with its `check` goal, configured via a POM execution to run in the Maven `verify` phase, enforcing **90% LINE and 90% BRANCH coverage as a project-wide aggregate**. The build fails when either counter falls below 90%.
+Adopt the `jacoco-maven-plugin` with its `check` goal — which has no default lifecycle binding and must be attached to `verify` via an explicit POM `<execution>` block — enforcing **90% LINE and 90% BRANCH coverage as a project-wide aggregate**. The build fails when either counter falls below 90%.
 
 JaCoCo is the de-facto standard for bytecode-instrumentation-based coverage on the JVM, is actively maintained, and integrates directly with the Maven lifecycle via its plugin — no extra wrapper scripts. Running in the `verify` phase means `mvn verify` is the one command that covers everything, consistent with how other quality gates in this project are wired.
 
-90% is a meaningful bar: it is high enough to enforce genuine test discipline, but the exclusion list is the relief valve for legitimately hard-to-test code. Exclusions cover generated and genuinely untestable boilerplate — the Spring `@SpringBootApplication` main class, plain DTO/configuration classes, and generated artifacts. The exact exclusion globs are finalized when the `pom.xml` and package layout exist and may be refined in the implementing build change without amending this ADR.
+90% is a widely-adopted high-coverage bar for services: 100% is impractical without either excluding every hard-to-test class or writing low-value tests purely to satisfy the counter, while thresholds in the 70–80% range leave room for whole untested conditional branches to pass undetected. The exclusion list is the relief valve for legitimately hard-to-test code — the Spring `@SpringBootApplication` main class, plain DTO/configuration classes, and generated artifacts. The exact exclusion globs are finalized when the `pom.xml` and package layout exist and may be refined in the implementing build change without amending this ADR.
 
-The project-wide aggregate is chosen deliberately over a per-class rule. Per-class is the strictest option, but it creates friction on legitimately hard-to-test classes; the aggregate is simpler and the exclusion list handles the edge cases.
+The project-wide aggregate is chosen over a per-class rule because per-class creates friction on legitimately hard-to-test classes and requires a growing exclusion list; the aggregate is simpler to administer, and the exclusion list handles edge cases.
 
 ## Consequences
 
@@ -79,7 +79,7 @@ The project-wide aggregate is chosen deliberately over a per-class rule. Per-cla
 ### Lower threshold (e.g., 70–80%)
 
 - Pros: easier to satisfy immediately; less pressure to write coverage-padding tests.
-- Cons: sets a weaker standard that tends to drift further downward over time; does not instil test discipline from the start.
+- Cons: sets a weaker standard that tends to drift further downward over time; does not instill test discipline from the start.
 
 ### Per-class threshold
 
@@ -93,7 +93,7 @@ The project-wide aggregate is chosen deliberately over a per-class rule. Per-cla
 
 ### Cobertura
 
-- Pros: was the original Maven coverage standard; still produces reports.
+- Pros: was the original Maven coverage standard.
 - Cons: effectively unmaintained; superseded by JaCoCo across the Java ecosystem; not the right choice for a new project.
 
 ## Links
