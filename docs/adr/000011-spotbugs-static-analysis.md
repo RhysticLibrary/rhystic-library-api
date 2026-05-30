@@ -26,7 +26,7 @@ tags: [quality]
 
 ## Context and Problem Statement
 
-`rhystic-library-api` has adopted formatting and style gates (Checkstyle, Google Java Format) to keep the codebase consistent, but those tools operate on source text — they do not catch latent bug patterns that only become visible in compiled bytecode. Null dereferences, resource leaks, broken `equals`/`hashCode` contracts, and similar defects require bytecode-level static analysis to surface before they reach runtime.
+`rhystic-library-api` has adopted formatting and style gates ([Checkstyle](000010-checkstyle-style-enforcement.md), [Spotless / google-java-format](000009-spotless-code-formatting.md)) to keep the codebase consistent, but those tools operate on source text — they do not catch latent bug patterns that only become visible in compiled bytecode. Null dereferences, resource leaks, broken `equals`/`hashCode` contracts, and similar defects require bytecode-level static analysis to surface before they reach runtime.
 
 The project is greenfield (see [`000003`](000003-java-spring-boot-application-framework.md) and [`000004`](000004-maven-build-tool.md)), which makes this the cheapest moment to adopt a zero-violation baseline: there is no existing codebase to retrofit and no accumulated suppressions to inherit. Establishing the gate now means every future line of code is written against it.
 

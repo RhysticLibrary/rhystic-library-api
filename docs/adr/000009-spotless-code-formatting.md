@@ -62,7 +62,7 @@ Spotless is the right choice on every driver: it produces fully deterministic ou
   - `mvn verify` is the same gate locally and in CI; no per-developer IDE setup is required.
   - google-java-format is non-configurable by design, so there is nothing to debate or drift.
 - **Negative**
-  - Spotless may overlap in scope with any style or static-analysis tooling the project adopts; in rare edge cases the tools may disagree and require a case-by-case suppression.
+  - Spotless may overlap in scope with any style or static-analysis tooling the project adopts; in rare edge cases the tools may disagree, resolved by reformatting (`spotless:apply`) or a narrow Spotless exclusion rather than by an inline suppression.
   - Adds a build step to `mvn verify`, increasing its wall-clock time slightly.
 
 ## Pros and Cons of the Options
