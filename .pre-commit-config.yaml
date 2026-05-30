@@ -11,7 +11,14 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-yaml
+        # Full safe-load validation for every YAML file except compose.prod.yml.
+        exclude: ^compose\.prod\.yml$
+      - id: check-yaml
+        # compose.prod.yml uses the Compose custom tag `!reset` (on `build: !reset null`),
+        # which the safe loader rejects; --unsafe runs a syntax-only check that tolerates it.
+        name: check-yaml (compose.prod.yml, custom !reset tag)
         args: [--unsafe]
+        files: ^compose\.prod\.yml$
       - id: check-toml
       - id: check-json
       - id: check-merge-conflict

@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.6</version>
     <relativePath/>
   </parent>
 
@@ -159,6 +159,13 @@
                 <exclude>com/rhysticlibrary/boot/RhysticLibraryApplication.class</exclude>
                 <exclude>com/rhysticlibrary/boot/package-info.class</exclude>
               </excludes>
+              <!--
+                Single-module build today, so this per-module BUNDLE check IS the
+                project-wide aggregate ADR 000013 requires. When domain modules land
+                (alongside the Enforcer cross-domain guard), move this to a reactor-level
+                aggregate (jacoco report-aggregate) so a module with production code but
+                no module-local tests fails closed rather than being skipped.
+              -->
               <rules>
                 <rule>
                   <element>BUNDLE</element>
