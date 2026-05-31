@@ -153,7 +153,7 @@ jobs:
           java-version: "25"
           cache: maven
       - name: Download compiled output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: java-build
           path: boot/target
