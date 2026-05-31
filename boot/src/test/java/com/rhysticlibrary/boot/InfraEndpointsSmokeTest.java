@@ -2,31 +2,18 @@ package com.rhysticlibrary.boot;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.http.HttpClient;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 /** Smoke tests asserting the framework-provided infrastructure endpoints respond. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureRestTestClient
 class InfraEndpointsSmokeTest {
 
-  @LocalServerPort private int port;
-
-  private RestTestClient client;
-
-  @BeforeEach
-  void setUp() {
-    HttpClient httpClient =
-        HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-    client =
-        RestTestClient.bindToServer(new JdkClientHttpRequestFactory(httpClient))
-            .baseUrl("http://localhost:" + port)
-            .build();
-  }
+  @Autowired private RestTestClient client;
 
   /** The Actuator health endpoint reports the application is UP. */
   @Test
@@ -74,9 +61,9 @@ class InfraEndpointsSmokeTest {
     assertThat(body).contains("\"openapi\"");
   }
 
-  /** The Swagger UI entry point responds successfully (redirect followed via JDK HttpClient). */
+  /** The Swagger UI entry point redirects to the UI bundle. */
   @Test
-  void swaggerUiEndpointResponds() {
-    client.get().uri("/swagger-ui.html").exchange().expectStatus().is2xxSuccessful();
+  void swaggerUiEndpointRedirectsToBundle() {
+    client.get().uri("/swagger-ui.html").exchange().expectStatus().is3xxRedirection();
   }
 }
