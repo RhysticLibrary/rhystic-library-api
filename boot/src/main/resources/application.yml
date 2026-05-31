@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: rhystic-library-api
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true

@@ -1,0 +1,11 @@
+name: rhystic-library-api
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rhystic-library-api:latest
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    restart: unless-stopped
