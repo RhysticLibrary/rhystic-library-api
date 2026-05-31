@@ -96,7 +96,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-  java-lint:
+  # Java CI is a fail-fast chain that compiles exactly once:
+  #   java-style (source-only, no compile) -> java-build (compile + SpotBugs,
+  #   uploads compiled output) -> java-test (reuses that output for tests + JaCoCo).
+  # A cheap style failure aborts before any compile; the compiled classes are
+  # shared via artifact so the test stage never recompiles main.
+  java-style:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -107,12 +112,36 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
-      # Lint, style, and static analysis only: Spotless, Checkstyle, SpotBugs +
-      # FindSecBugs. Tests and the JaCoCo coverage gate run in the java-test job.
-      - name: Lint and static analysis
-        run: ./mvnw -B -Dmaven.test.skip=true -Djacoco.skip=true verify
+      # Spotless (google-java-format) and Checkstyle read source files only, so
+      # they run as direct goals with no compilation and fail fast on style.
+      - name: Spotless and Checkstyle
+        run: ./mvnw -B spotless:check checkstyle:check
+
+  java-build:
+    needs: java-style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      # Compile main once and run SpotBugs + FindSecBugs (needs compiled classes).
+      # Tests, JaCoCo, and the source-only gates (done in java-style) are skipped.
+      - name: Compile and static analysis
+        run: ./mvnw -B -Dmaven.test.skip=true -Djacoco.skip=true -Dspotless.check.skip=true -Dcheckstyle.skip=true verify
+      - name: Upload compiled output
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-build
+          path: boot/target
+          retention-days: 1
 
   java-test:
+    needs: java-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -123,7 +152,13 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
-      # Tests and the JaCoCo coverage gate only; the lint/style/static-analysis
-      # gates run in the java-lint job.
+      - name: Download compiled output
+        uses: actions/download-artifact@v4
+        with:
+          name: java-build
+          path: boot/target
+      # Reuse the compiled main classes from java-build (maven.main.skip => no
+      # main recompile); run the tests and the JaCoCo coverage gate only. The
+      # lint/style/SpotBugs gates already passed upstream.
       - name: Test and coverage
-        run: ./mvnw -B -Dspotless.check.skip=true -Dcheckstyle.skip=true -Dspotbugs.skip=true verify
+        run: ./mvnw -B -Dmaven.main.skip=true -Dspotless.check.skip=true -Dcheckstyle.skip=true -Dspotbugs.skip=true verify
