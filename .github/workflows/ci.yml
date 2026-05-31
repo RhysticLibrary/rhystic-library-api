@@ -134,7 +134,7 @@ jobs:
       - name: Compile and static analysis
         run: ./mvnw -B -Dmaven.test.skip=true -Djacoco.skip=true -Dspotless.check.skip=true -Dcheckstyle.skip=true verify
       - name: Upload compiled output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: java-build
           path: boot/target
