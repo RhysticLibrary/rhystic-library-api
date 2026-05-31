@@ -96,7 +96,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-  java-build:
+  java-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -107,5 +107,23 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
-      - name: Build and verify
-        run: ./mvnw -B verify
+      # Lint, style, and static analysis only: Spotless, Checkstyle, SpotBugs +
+      # FindSecBugs. Tests and the JaCoCo coverage gate run in the java-test job.
+      - name: Lint and static analysis
+        run: ./mvnw -B -Dmaven.test.skip=true -Djacoco.skip=true verify
+
+  java-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      # Tests and the JaCoCo coverage gate only; the lint/style/static-analysis
+      # gates run in the java-lint job.
+      - name: Test and coverage
+        run: ./mvnw -B -Dspotless.check.skip=true -Dcheckstyle.skip=true -Dspotbugs.skip=true verify
